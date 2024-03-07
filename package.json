@@ -1,0 +1,14 @@
+{
+  "name": "simfi",
+  "version": "0.1.0",
+  "description": "Contracts for simulated finance.",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "escX",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.21.0"
+  }
+}
