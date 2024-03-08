@@ -10,7 +10,7 @@ contract SFT is IERC20, IERC20Errors {
     address private immutable _owner;
 
     uint256 public totalSupply; // 货币总供应
-    mapping(address account => uint256) public balanceOf; // 账户余额
+    mapping(address account => uint256) public balanceOf; // account账户余额
     mapping(address account => mapping(address spender => uint256))
         public allowance; // account账户授权spender账户的额度
 
@@ -44,7 +44,7 @@ contract SFT is IERC20, IERC20Errors {
         return true;
     }
 
-    // 调用者授权转账额度给_spender账户
+    // 调用者授权额度给_spender账户
     function approve(address _spender, uint256 _value) external returns (bool) {
         if (_spender == address(0)) {
             revert ERC20InvalidSpender(_spender);
