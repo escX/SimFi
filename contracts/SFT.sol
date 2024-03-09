@@ -7,7 +7,7 @@ import {IERC20Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.so
 contract SFT is IERC20, IERC20Errors {
     string public name = "SimFi Token";
     string public symbol = "SFT";
-    address private immutable _owner;
+    address public immutable owner;
 
     uint256 public totalSupply; // 货币总供应
     mapping(address account => uint256) public balanceOf; // account账户余额
@@ -15,14 +15,14 @@ contract SFT is IERC20, IERC20Errors {
         public allowance; // account账户授权spender账户的额度
 
     modifier onlyOwner() {
-        if (_owner != msg.sender) {
+        if (owner != msg.sender) {
             revert ERC20InvalidSender(msg.sender);
         }
         _;
     }
 
     constructor() {
-        _owner = msg.sender;
+        owner = msg.sender;
     }
 
     // 调用者转账给_to账户
@@ -35,6 +35,9 @@ contract SFT is IERC20, IERC20Errors {
         }
         if (_fromBalance < _value) {
             revert ERC20InsufficientBalance(msg.sender, _fromBalance, _value);
+        }
+        if (_value == 0) {
+            revert ERC20InvalidSender(msg.sender);
         }
 
         balanceOf[msg.sender] = _fromBalance - _value;
@@ -77,6 +80,9 @@ contract SFT is IERC20, IERC20Errors {
         }
         if (_fromBalance < _value) {
             revert ERC20InsufficientBalance(_from, _fromBalance, _value);
+        }
+        if (_value == 0) {
+            revert ERC20InvalidSender(msg.sender);
         }
 
         balanceOf[_from] = _fromBalance - _value;
