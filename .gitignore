@@ -3,4 +3,5 @@ cache
 node_modules
 coverage
 coverage.json
+ignition/deployments
 .env
