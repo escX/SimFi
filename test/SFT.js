@@ -48,23 +48,18 @@ describe("SFT Contract", function () {
       const { SFTContract, ownerAddress, addr2 } = await loadFixture(initFixture);
       const transferAmount = 1;
 
-      await SFTContract.mint(100);
-      const balanceOfOwnerBefore = await SFTContract.balanceOf(ownerAddress);
-      const balanceOfReceiverBefore = await SFTContract.balanceOf(addr2.address);
-
-      await SFTContract.transfer(addr2.address, transferAmount);
-      const balanceOfOwnerAfter = await SFTContract.balanceOf(ownerAddress);
-      const balanceOfReceiverAfter = await SFTContract.balanceOf(addr2.address);
-
-      assert.equal(balanceOfOwnerAfter, balanceOfOwnerBefore - BigInt(transferAmount));
-      assert.equal(balanceOfReceiverAfter, balanceOfReceiverBefore + BigInt(transferAmount));
+      await expect(SFTContract.transfer(addr2.address, transferAmount))
+        .to.changeTokenBalances(
+          SFTContract,
+          [ownerAddress, addr2.address],
+          [-transferAmount, transferAmount]
+        );
     });
 
     it("应该触发Transfer事件", async function () {
       const { SFTContract, ownerAddress, addr2 } = await loadFixture(initFixture);
       const transferAmount = 1;
 
-      await SFTContract.mint(100);
       await expect(SFTContract.transfer(addr2.address, transferAmount))
         .to.emit(SFTContract, "Transfer")
         .withArgs(ownerAddress, addr2.address, transferAmount);
@@ -123,17 +118,17 @@ describe("SFT Contract", function () {
     it("转账成功后，发送者账户余额应该减少，接收者账户余额应该增加，同时发送者账户的授权额度更新", async function () {
       const { SFTContract, deployer, addr1, addr2 } = await loadFixture(initFixture);
       const transferAmount = 50;
-      const balanceOfSenderBefore = await SFTContract.balanceOf(deployer.address);
-      const balanceOfReceiverBefore = await SFTContract.balanceOf(addr2.address);
       const allowanceOfSenderBefore = await SFTContract.allowance(deployer, addr1.address);
 
-      await SFTContract.connect(addr1).transferFrom(deployer.address, addr2.address, transferAmount);
-      const balanceOfSenderAfter = await SFTContract.balanceOf(deployer.address);
-      const balanceOfReceiverAfter = await SFTContract.balanceOf(addr2.address);
+      await expect(SFTContract.connect(addr1).transferFrom(deployer.address, addr2.address, transferAmount))
+        .to.changeTokenBalances(
+          SFTContract,
+          [deployer.address, addr2.address],
+          [-transferAmount, transferAmount]
+        );
+
       const allowanceOfSenderAfter = await SFTContract.allowance(deployer, addr1.address);
 
-      assert.equal(balanceOfSenderBefore, balanceOfSenderAfter + BigInt(transferAmount));
-      assert.equal(balanceOfReceiverBefore, balanceOfReceiverAfter - BigInt(transferAmount));
       assert.equal(allowanceOfSenderBefore, allowanceOfSenderAfter + BigInt(transferAmount));
     });
 
@@ -151,14 +146,13 @@ describe("SFT Contract", function () {
     it("合约拥有者账户余额应该增加，总供应量应该增加", async function () {
       const { SFTContract, ownerAddress } = await loadFixture(initFixture);
       const mintAmount = 100;
-      const balanceOfOwnerBefore = await SFTContract.balanceOf(ownerAddress);
       const supplyBefore = await SFTContract.totalSupply();
 
-      await SFTContract.mint(mintAmount);
-      const balanceOfOwnerAfter = await SFTContract.balanceOf(ownerAddress);
+      await expect(SFTContract.mint(mintAmount))
+        .to.changeTokenBalance(SFTContract, ownerAddress, mintAmount);
+
       const supplyAfter = await SFTContract.totalSupply();
 
-      assert.equal(balanceOfOwnerAfter, balanceOfOwnerBefore + BigInt(mintAmount));
       assert.equal(supplyAfter, supplyBefore + BigInt(mintAmount));
     });
 
@@ -186,14 +180,13 @@ describe("SFT Contract", function () {
     it("合约拥有者账户余额应该减少，总供应量应该减少", async function () {
       const { SFTContract, ownerAddress } = await loadFixture(initFixture);
       const burnAmount = 1;
-      const balanceOfOwnerBefore = await SFTContract.balanceOf(ownerAddress);
       const supplyBefore = await SFTContract.totalSupply();
 
-      await SFTContract.burn(burnAmount);
-      const balanceOfOwnerAfter = await SFTContract.balanceOf(ownerAddress);
+      await expect(SFTContract.burn(burnAmount))
+        .to.changeTokenBalance(SFTContract, ownerAddress, -burnAmount);
+
       const supplyAfter = await SFTContract.totalSupply();
 
-      assert.equal(balanceOfOwnerBefore, balanceOfOwnerAfter + BigInt(burnAmount));
       assert.equal(supplyBefore, supplyAfter + BigInt(burnAmount));
     });
 
