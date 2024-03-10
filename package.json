@@ -1,10 +1,8 @@
 {
   "name": "simfi",
   "version": "0.1.0",
-  "description": "Contracts for simulated finance.",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "description": "Contracts for simulated finance",
+  "scripts": {},
   "author": "escX",
   "license": "MIT",
   "devDependencies": {
