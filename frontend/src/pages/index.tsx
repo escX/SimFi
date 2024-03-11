@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -73,10 +74,11 @@ export default function Index() {
             name="url"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Hardhat本地节点地址</FormLabel>
+                <FormLabel>连接Hardhat网络</FormLabel>
                 <FormControl>
                   <Input placeholder={HARDHAT_NODE_URL} {...field} />
                 </FormControl>
+                <FormDescription>确定您已启动了Hardhat网络</FormDescription>
                 <FormMessage />
               </FormItem>
             )}

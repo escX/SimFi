@@ -2,7 +2,11 @@
   "name": "simfi",
   "version": "0.1.0",
   "description": "Contracts for simulated finance",
-  "scripts": {},
+  "scripts": {
+    "test": "npx hardhat test",
+    "deploy": "npx hardhat ignition deploy --parameters ignition/parameters.json --network localhost",
+    "visualize": "npx hardhat ignition visualize"
+  },
   "author": "escX",
   "license": "MIT",
   "devDependencies": {
