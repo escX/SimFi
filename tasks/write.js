@@ -23,7 +23,7 @@ function walkDir(sourceFolder, callback) {
 function copyFile(source, target) {
   const targetDir = path.dirname(target);
   if (!fs.existsSync(targetDir)) {
-    fs.mkdirSync(targetDir, { recursive: true });
+    fs.mkdirSync(targetDir);
   }
   fs.copyFileSync(source, target);
 }

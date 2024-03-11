@@ -1,3 +1,5 @@
+import fs from 'fs'
+import path from 'path'
 import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -16,11 +18,21 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 
+interface Artifact {
+  contractName: string
+  sourceName: string
+  abi: any[]
+  bytecode: string
+  deployedBytecode: string
+  linkReferences: Record<string, any>
+  deployedLinkReferences: Record<string, any>
+}
+
 const FormSchema = z.object({
   url: z.string().url({ message: "无效地址" }),
 })
 
-export default function Index() {
+export default function Index({ artifacts }: { artifacts: Artifact[] }) {
   // const [provider, setProvider] = useState<JsonRpcApiProvider | null>(null)
   const [accounts, setAccounts] = useState<JsonRpcSigner[]>([])
   const [balanceOf, setBalanceOf] = useState<Record<string, bigint>>({})
@@ -95,4 +107,30 @@ export default function Index() {
       ))}
     </>
   )
+}
+
+export async function getStaticProps() {
+  const dirPath = path.join(process.cwd(), 'src', 'contracts')
+  const artifacts: Artifact[] = []
+
+  fs.readdirSync(dirPath).forEach(file => {
+    const filePath = path.join(dirPath, file)
+
+    if (fs.statSync(filePath).isFile()) {
+      const content = fs.readFileSync(filePath, 'utf8')
+
+      try {
+        const contentJson = JSON.parse(content)
+        if (!!contentJson.abi && !!contentJson.bytecode) {
+          artifacts.push(contentJson)
+        }
+      } catch (error) { }
+    }
+  })
+
+  return {
+    props: {
+      artifacts
+    }
+  }
 }
