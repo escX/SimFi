@@ -3,14 +3,18 @@ const fs = require('fs');
 const path = require('path');
 
 // 遍历文件夹下的文件
-function walkDir(dir, callback) {
-  fs.readdirSync(dir).forEach(file => {
-    const filePath = path.join(dir, file);
-    const stat = fs.statSync(filePath);
-    if (stat.isDirectory()) {
-      walkDir(filePath, callback);
-    } else if (stat.isFile()) {
-      callback(filePath);
+function walkDir(sourceFolder, callback) {
+  fs.readdirSync(sourceFolder).forEach(folderName => {
+    const folderPath = path.join(sourceFolder, folderName);
+    const folderStat = fs.statSync(folderPath);
+    if (folderStat.isDirectory()) {
+      fs.readdirSync(folderPath).forEach(fileName => {
+        const filePath = path.join(folderPath, fileName);
+        const fileStat = fs.statSync(filePath);
+        if (fileStat.isFile() && filePath.endsWith('.json') && !filePath.endsWith('.dbg.json')) {
+          callback(filePath, fileName);
+        }
+      })
     }
   });
 }
@@ -33,9 +37,8 @@ task("write", "Write smart contract data file to frontend", async (taskArgs, hre
   }
 
   // 遍历源文件夹并复制文件到目标文件夹
-  walkDir(sourceFolder, (filePath) => {
-    const relativePath = path.relative(sourceFolder, filePath);
-    const targetPath = path.join(targetFolder, relativePath);
+  walkDir(sourceFolder, (filePath, fileName) => {
+    const targetPath = path.join(targetFolder, fileName);
     copyFile(filePath, targetPath);
   });
 });
