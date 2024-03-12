@@ -1,12 +1,9 @@
-import { Inter } from "next/font/google"
 import fs from 'fs'
 import path from 'path'
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { JsonRpcApiProvider, JsonRpcSigner, ethers } from "ethers"
-import { HARDHAT_NODE_URL } from "@/utils"
+import { message } from 'antd'
 import ConnectModal from "../components/index/ConnectModal"
-
-const inter = Inter({ subsets: ["latin"] })
 
 export default function Index({ artifacts }: { artifacts: Artifact[] }) {
   const [provider, setProvider] = useState<JsonRpcApiProvider | null>(null) // 当前连接到hardhat网络的provider
@@ -14,14 +11,45 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
   const [accounts, setAccounts] = useState<JsonRpcSigner[]>([]) // 账户列表
   const [currAccount, setCurrAccount] = useState<string>() // 当前选中的账户
   const [currContract, setCurrContract] = useState<string>() // 当前选中的合约
+  const [messageApi, contextHolder] = message.useMessage()
+
+  const hasProvider = useMemo(() => {
+    return provider instanceof JsonRpcApiProvider
+  }, [provider])
+
+  const handleConnect = async (url: string) => {
+    try {
+      const provider = new ethers.JsonRpcProvider(url)
+      const accounts = await provider.listAccounts()
+
+      setProvider(provider)
+      setAccounts(accounts)
+
+      messageApi.open({
+        type: 'success',
+        content: '连接到Hardhat网络',
+      })
+
+      return Promise.resolve()
+    } catch (error) {
+      messageApi.open({
+        type: 'error',
+        content: '无法连接到Hardhat网络',
+      })
+
+      return Promise.reject()
+    }
+  }
 
   return (
     <>
-      <main className={inter.className}>
+      <div>
 
-      </main>
+      </div>
 
-      <ConnectModal />
+      <ConnectModal visible={!hasProvider} onConfirm={handleConnect} />
+
+      {contextHolder}
     </>
   )
 }
@@ -30,7 +58,7 @@ export async function getStaticProps() {
   const dirPath = path.join(process.cwd(), 'src', 'contracts')
   const artifacts: Artifact[] = []
 
-  if (fs.existsSync(dirPath) ) {
+  if (fs.existsSync(dirPath)) {
     fs.readdirSync(dirPath).forEach(file => {
       const filePath = path.join(dirPath, file)
 
@@ -42,7 +70,7 @@ export async function getStaticProps() {
           if (!!contentJson.abi && !!contentJson.bytecode) {
             artifacts.push(contentJson)
           }
-        } catch (error) {}
+        } catch (error) { }
       }
     })
   }
