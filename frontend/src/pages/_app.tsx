@@ -3,6 +3,7 @@ import zhCN from 'antd/locale/zh_CN'
 import type { AppProps } from "next/app"
 import dynamic from "next/dynamic"
 import Head from "next/head"
+import "@/styles/global.css"
 
 export default function App({ Component, pageProps }: AppProps) {
   const Layout = dynamic(() => import('@/components/Layout'), {

@@ -2,8 +2,12 @@ import fs from 'fs'
 import path from 'path'
 import { useMemo, useState } from "react"
 import { JsonRpcApiProvider, JsonRpcSigner, ethers } from "ethers"
-import { message } from 'antd'
+import { Layout, Typography, message } from 'antd'
+import styles from "@/styles/index.module.css"
 import ConnectModal from "../components/index/ConnectModal"
+import DeployedListPanel from '@/components/index/DeployedListPanel'
+import HistoryPanel from '@/components/index/HistoryPanel'
+import InfoPanel from '@/components/index/InfoPanel'
 
 export default function Index({ artifacts }: { artifacts: Artifact[] }) {
   const [provider, setProvider] = useState<JsonRpcApiProvider | null>(null) // 当前连接到hardhat网络的provider
@@ -43,11 +47,23 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
 
   return (
     <>
-      <div>
+      <Layout className={styles.layout}>
+        <Layout.Header className={styles.header}>
+          <Typography.Text className={styles.title} strong>SimFi</Typography.Text>
+        </Layout.Header>
+        <Layout>
+          <Layout.Sider width="300" className={styles.left_sider}>
+            <DeployedListPanel />
+          </Layout.Sider>
+          <Layout.Content></Layout.Content>
+          <Layout.Sider width="300" className={styles.right_sider}>
+            <InfoPanel />
+            <HistoryPanel />
+          </Layout.Sider>
+        </Layout>
+      </Layout>
 
-      </div>
-
-      <ConnectModal visible={!hasProvider} onConfirm={handleConnect} />
+      <ConnectModal visible={!!hasProvider} onConfirm={handleConnect} />
 
       {contextHolder}
     </>

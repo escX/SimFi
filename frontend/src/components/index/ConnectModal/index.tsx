@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Button, Form, Input, Modal } from "antd"
-import { HARDHAT_NODE_URL } from "@/utils"
+import { HARDHAT_NODE_URL } from "@/lib/utils"
 
 interface Props {
   visible: boolean
