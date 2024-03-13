@@ -1,5 +1,3 @@
-import { JsonRpcSigner } from "ethers"
-
 export interface Artifact {
   contractName: string
   sourceName: string
@@ -10,6 +8,9 @@ export interface Artifact {
   deployedLinkReferences: Record<string, any>
 }
 
-export interface AccountData extends JsonRpcSigner {
+export interface ContractData {
+  address: string
   name: string
+  deployTimestamp: number
+  deployAccount: string
 }

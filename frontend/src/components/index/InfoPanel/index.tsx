@@ -1,7 +1,8 @@
-import { Button, Card, Form, Select, Space, Typography } from "antd"
+import { Button, Card, Form, Select, Space, Typography, message } from "antd"
 import { useState } from "react"
+import { Artifact } from "@/lib/const"
+import { AccountData } from "./const"
 import AccountListModal from "../AccountListModal"
-import { AccountData, Artifact } from "@/lib/const"
 
 interface Props {
   accounts: AccountData[]
@@ -12,16 +13,28 @@ interface Props {
   onAccountNameChange: (names: Record<string, string>) => void
 }
 
-export default function Index({accounts, artifacts, currAccount, onAccountChange, onDeploy, onAccountNameChange}: Props) {
+export default function Index({ accounts, artifacts, currAccount, onAccountChange, onDeploy, onAccountNameChange }: Props) {
   const [currArtifact, setCurrArtifact] = useState<string>()
-  const [accountListVisible, setAccountListVisible] = useState(false)
+  const [accountListVisible, setAccountListVisible] = useState<boolean>(false)
+  const [deployLoading, setDeployLoading] = useState<boolean>(false)
+  const [messageApi, contextHolder] = message.useMessage()
 
   const handleDeploy = () => {
-    const artifact = artifacts.find(item => item.sourceName === currArtifact)
-    if (artifact) {
-      onDeploy(artifact).then(() => {
-        setCurrArtifact(undefined)
-      }).catch(() => {})
+    if (!!currArtifact) {
+      const artifact = artifacts.find(item => item.sourceName === currArtifact)
+      if (artifact) {
+        setDeployLoading(true)
+        onDeploy(artifact).then(() => {
+          setCurrArtifact(undefined)
+        }).finally(() => {
+          setDeployLoading(false)
+        })
+      }
+    } else {
+      messageApi.open({
+        type: 'error',
+        content: '请选择要部署的合约',
+      })
     }
   }
 
@@ -38,24 +51,24 @@ export default function Index({accounts, artifacts, currAccount, onAccountChange
         }>
           <Select
             options={accounts}
-            fieldNames={{label: 'name', value: 'address'}}
+            fieldNames={{ label: 'name', value: 'address' }}
             value={currAccount}
             onChange={onAccountChange}
           />
         </Form.Item>
 
-        <Form.Item style={{marginBottom: 0}}>
+        <Form.Item style={{ marginBottom: 0 }}>
           <Space.Compact style={{ width: '100%' }}>
             <Select
               options={artifacts.map(artifact => ({
                 ...artifact,
                 contractName: `${artifact.contractName}.sol`,
               }))}
-              fieldNames={{label: 'contractName', value: 'sourceName'}}
+              fieldNames={{ label: 'contractName', value: 'sourceName' }}
               value={currArtifact}
               onChange={setCurrArtifact}
             />
-            <Button type="primary" onClick={handleDeploy}>部署合约</Button>
+            <Button type="primary" onClick={handleDeploy} loading={deployLoading}>部署合约</Button>
           </Space.Compact>
         </Form.Item>
       </Card>
@@ -67,6 +80,8 @@ export default function Index({accounts, artifacts, currAccount, onAccountChange
         onCancel={() => setAccountListVisible(false)}
         onConfirm={handleChangeAccountName}
       />
+
+      {contextHolder}
     </>
   )
 }

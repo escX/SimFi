@@ -3,7 +3,8 @@ import path from 'path'
 import { useMemo, useState } from "react"
 import { JsonRpcApiProvider, JsonRpcSigner, ethers } from "ethers"
 import { Layout, Typography, message } from 'antd'
-import { AccountData, Artifact } from '@/lib/const'
+import { Artifact, ContractData } from '@/lib/const'
+import { getDefaultAccountNameMap } from '@/lib/utils'
 import styles from "@/styles/index.module.css"
 import ConnectModal from "../components/index/ConnectModal"
 import DeployedListPanel from '@/components/index/DeployedListPanel'
@@ -12,13 +13,14 @@ import InfoPanel from '@/components/index/InfoPanel'
 
 export default function Index({ artifacts }: { artifacts: Artifact[] }) {
   const [provider, setProvider] = useState<JsonRpcApiProvider | null>(null) // 当前连接到hardhat网络的provider
-  const [accounts, setAccounts] = useState<AccountData[]>([]) // 账户列表
-  const [contracts, setContracts] = useState<any[]>([]) // 已部署合约列表
+  const [accounts, setAccounts] = useState<JsonRpcSigner[]>([]) // 账户列表
+  const [accountNameMap, setAccountNameMap] = useState<Record<string, string>>({}) // 账户地址和名称的映射
+  const [contracts, setContracts] = useState<ContractData[]>([]) // 已部署合约列表
   const [currAccount, setCurrAccount] = useState<string>() // 当前选中的账户
   const [currContract, setCurrContract] = useState<string>() // 当前选中的合约
   const [messageApi, contextHolder] = message.useMessage()
 
-  const hasProvider = useMemo(() => {
+  const hasProvider = useMemo<boolean>(() => {
     return provider instanceof JsonRpcApiProvider
   }, [provider])
 
@@ -28,12 +30,9 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
       const accounts = await provider.listAccounts()
 
       setProvider(provider)
-      setAccounts(accounts.map((account, index) => ({
-        ...account,
-        ...Object.assign(Object.create(JsonRpcSigner.prototype)),
-        name: `账户${index + 1}`
-      })))
+      setAccounts(accounts)
       setCurrAccount(accounts[0].address)
+      setAccountNameMap(getDefaultAccountNameMap(accounts))
 
       messageApi.open({
         type: 'success',
@@ -52,15 +51,52 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
   }
 
   const handleDepoly = async (artifact: Artifact) => {
-    return Promise.resolve()
-  }
+    const signer = accounts.find(account => account.address === currAccount)
 
-  const handleChangeAccountName = (names: Record<string, string>) => {
-    setAccounts(accounts.map(account => ({
-      ...account,
-      ...Object.assign(Object.create(JsonRpcSigner.prototype)),
-      name: names[account.address]
-    })))
+    if (signer !== undefined && !!signer.address) {
+      try {
+        const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, signer)
+        const contract = await factory.deploy()
+        await contract.waitForDeployment()
+        const deployedAddress = await contract.getAddress()
+
+        if (contracts.length === 0) {
+          setCurrContract(deployedAddress)
+        }
+        setContracts(contract => {
+          return [
+            {
+              address: deployedAddress,
+              name: artifact.contractName,
+              deployTimestamp: new Date().getTime(),
+              deployAccount: signer.address
+            },
+            ...contract
+          ]
+        })
+
+        messageApi.open({
+          type: 'success',
+          content: '部署成功',
+        })
+
+        return Promise.resolve()
+      } catch (error) {
+        messageApi.open({
+          type: 'error',
+          content: '部署失败',
+        })
+
+        return Promise.reject()
+      }
+    } else {
+      messageApi.open({
+        type: 'error',
+        content: '无法获取当前账户',
+      })
+
+      return Promise.reject()
+    }
   }
 
   return (
@@ -72,12 +108,15 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
         <Layout>
           <Layout.Sider width="300" className={styles.left_sider}>
             <InfoPanel
-              accounts={accounts}
+              accounts={accounts.map(account => ({
+                address: account.address,
+                name: accountNameMap[account.address]
+              }))}
               artifacts={artifacts}
               currAccount={currAccount}
               onAccountChange={setCurrAccount}
               onDeploy={handleDepoly}
-              onAccountNameChange={handleChangeAccountName}
+              onAccountNameChange={setAccountNameMap}
             />
             <DeployedListPanel />
           </Layout.Sider>

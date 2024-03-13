@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { List, Modal, Typography } from "antd"
-import { AccountData } from "@/lib/const"
+import { AccountData } from "../InfoPanel/const"
 
 interface Props {
   accounts: AccountData[]
@@ -29,7 +29,7 @@ export default function Index({ accounts, currAccount, visible, onCancel, onConf
     open={visible}
     onCancel={onCancel}
     onOk={() => onConfirm(names)}
-    styles={{body: {height: '60vh', overflow: 'auto'}}}
+    styles={{ body: { height: '60vh', overflow: 'auto' } }}
   >
     <List
       dataSource={accounts}
@@ -37,13 +37,15 @@ export default function Index({ accounts, currAccount, visible, onCancel, onConf
         <List.Item>
           <List.Item.Meta
             title={
-              <Typography.Text style={{marginLeft: 20}} editable={{
+              <Typography.Text style={{ marginLeft: 20 }} editable={{
                 text: names[item.address],
                 onChange: (text) => {
-                  setNames({
-                    ...names,
-                    [item.address]: text,
-                  })
+                  if (!!text) {
+                    setNames({
+                      ...names,
+                      [item.address]: text,
+                    })
+                  }
                 },
               }}>
                 {currAccount === item.address ?
@@ -54,7 +56,7 @@ export default function Index({ accounts, currAccount, visible, onCancel, onConf
               </Typography.Text>
             }
             description={
-              <Typography.Text style={{marginLeft: 20}} type="secondary" copyable>
+              <Typography.Text style={{ marginLeft: 20 }} type="secondary" copyable>
                 {item.address}
               </Typography.Text>
             }
