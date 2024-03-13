@@ -27,7 +27,6 @@ export default function Index({ visible, onConfirm }: Props) {
 
   return <Modal
     title="连接Hardhat网络"
-    closeIcon={false}
     confirmLoading={confirmLoading}
     open={visible}
     footer={<Button type="primary" onClick={handleConfirm}>确定</Button>}

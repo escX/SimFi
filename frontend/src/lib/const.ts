@@ -1,4 +1,6 @@
-interface Artifact {
+import { JsonRpcSigner } from "ethers"
+
+export interface Artifact {
   contractName: string
   sourceName: string
   abi: any[]
@@ -6,4 +8,8 @@ interface Artifact {
   deployedBytecode: string
   linkReferences: Record<string, any>
   deployedLinkReferences: Record<string, any>
+}
+
+export interface AccountData extends JsonRpcSigner {
+  name: string
 }

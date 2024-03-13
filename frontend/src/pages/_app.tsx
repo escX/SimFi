@@ -17,7 +17,7 @@ export default function App({ Component, pageProps }: AppProps) {
       <meta name="viewport" content="width=device-width, initial-scale=1" />
     </Head>
 
-    <ConfigProvider locale={zhCN}>
+    <ConfigProvider locale={zhCN} modal={{closeIcon: false}}>
       <Layout>
         <Component {...pageProps} />
       </Layout>

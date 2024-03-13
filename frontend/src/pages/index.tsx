@@ -3,6 +3,7 @@ import path from 'path'
 import { useMemo, useState } from "react"
 import { JsonRpcApiProvider, JsonRpcSigner, ethers } from "ethers"
 import { Layout, Typography, message } from 'antd'
+import { AccountData, Artifact } from '@/lib/const'
 import styles from "@/styles/index.module.css"
 import ConnectModal from "../components/index/ConnectModal"
 import DeployedListPanel from '@/components/index/DeployedListPanel'
@@ -11,8 +12,8 @@ import InfoPanel from '@/components/index/InfoPanel'
 
 export default function Index({ artifacts }: { artifacts: Artifact[] }) {
   const [provider, setProvider] = useState<JsonRpcApiProvider | null>(null) // 当前连接到hardhat网络的provider
+  const [accounts, setAccounts] = useState<AccountData[]>([]) // 账户列表
   const [contracts, setContracts] = useState<any[]>([]) // 已部署合约列表
-  const [accounts, setAccounts] = useState<JsonRpcSigner[]>([]) // 账户列表
   const [currAccount, setCurrAccount] = useState<string>() // 当前选中的账户
   const [currContract, setCurrContract] = useState<string>() // 当前选中的合约
   const [messageApi, contextHolder] = message.useMessage()
@@ -27,7 +28,12 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
       const accounts = await provider.listAccounts()
 
       setProvider(provider)
-      setAccounts(accounts)
+      setAccounts(accounts.map((account, index) => ({
+        ...account,
+        ...Object.assign(Object.create(JsonRpcSigner.prototype)),
+        name: `账户${index + 1}`
+      })))
+      setCurrAccount(accounts[0].address)
 
       messageApi.open({
         type: 'success',
@@ -45,6 +51,18 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
     }
   }
 
+  const handleDepoly = async (artifact: Artifact) => {
+    return Promise.resolve()
+  }
+
+  const handleChangeAccountName = (names: Record<string, string>) => {
+    setAccounts(accounts.map(account => ({
+      ...account,
+      ...Object.assign(Object.create(JsonRpcSigner.prototype)),
+      name: names[account.address]
+    })))
+  }
+
   return (
     <>
       <Layout className={styles.layout}>
@@ -53,17 +71,24 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
         </Layout.Header>
         <Layout>
           <Layout.Sider width="300" className={styles.left_sider}>
+            <InfoPanel
+              accounts={accounts}
+              artifacts={artifacts}
+              currAccount={currAccount}
+              onAccountChange={setCurrAccount}
+              onDeploy={handleDepoly}
+              onAccountNameChange={handleChangeAccountName}
+            />
             <DeployedListPanel />
           </Layout.Sider>
           <Layout.Content></Layout.Content>
           <Layout.Sider width="300" className={styles.right_sider}>
-            <InfoPanel />
             <HistoryPanel />
           </Layout.Sider>
         </Layout>
       </Layout>
 
-      <ConnectModal visible={!!hasProvider} onConfirm={handleConnect} />
+      <ConnectModal visible={!hasProvider} onConfirm={handleConnect} />
 
       {contextHolder}
     </>
