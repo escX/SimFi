@@ -12,5 +12,6 @@ export interface ContractData {
   address: string
   name: string
   deployTimestamp: number
-  deployAccount: string
+  deployAccountName: string
+  deployAccountAddress: string
 }

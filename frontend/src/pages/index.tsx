@@ -10,6 +10,7 @@ import ConnectModal from "../components/index/ConnectModal"
 import DeployedListPanel from '@/components/index/DeployedListPanel'
 import HistoryPanel from '@/components/index/HistoryPanel'
 import InfoPanel from '@/components/index/InfoPanel'
+import { Contract } from 'ethers'
 
 export default function Index({ artifacts }: { artifacts: Artifact[] }) {
   const [provider, setProvider] = useState<JsonRpcApiProvider | null>(null) // 当前连接到hardhat网络的provider
@@ -69,7 +70,8 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
               address: deployedAddress,
               name: artifact.contractName,
               deployTimestamp: new Date().getTime(),
-              deployAccount: signer.address
+              deployAccountAddress: signer.address,
+              deployAccountName: accountNameMap[signer.address]
             },
             ...contract
           ]
@@ -99,6 +101,13 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
     }
   }
 
+  const handleDeleteContract = (address: string) => {
+    setContracts(contracts => contracts.filter(contract => contract.address !== address))
+    if (currContract === address) {
+      setCurrContract(undefined)
+    }
+  }
+
   return (
     <>
       <Layout className={styles.layout}>
@@ -106,7 +115,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
           <Typography.Text className={styles.title} strong>SimFi</Typography.Text>
         </Layout.Header>
         <Layout>
-          <Layout.Sider width="300" className={styles.left_sider}>
+          <Layout.Sider width="480" className={styles.left_sider}>
             <InfoPanel
               accounts={accounts.map(account => ({
                 address: account.address,
@@ -118,7 +127,12 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
               onDeploy={handleDepoly}
               onAccountNameChange={setAccountNameMap}
             />
-            <DeployedListPanel />
+            <DeployedListPanel
+              contracts={contracts}
+              currContract={currContract}
+              onChangeCurrContract={setCurrContract}
+              onDelete={handleDeleteContract}
+            />
           </Layout.Sider>
           <Layout.Content></Layout.Content>
           <Layout.Sider width="300" className={styles.right_sider}>
