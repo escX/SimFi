@@ -1,3 +1,5 @@
+import { Card } from "antd"
+
 export default function Index() {
-  return <div></div>
+  return <Card></Card>
 }

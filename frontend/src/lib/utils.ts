@@ -1,4 +1,6 @@
 import { JsonRpcSigner } from "ethers"
+import dynamic from "next/dynamic"
+import { ComponentType } from "react"
 
 export const HARDHAT_NODE_URL = "http://localhost:8545"
 
@@ -9,4 +11,8 @@ export const getDefaultAccountNameMap = (accounts: JsonRpcSigner[]) => {
   })
 
   return map
+}
+
+export const contractComponentMap: Record<string, ComponentType<any>> = {
+  'SFT': dynamic(() => import('@/components/index/ContractSFT'))
 }

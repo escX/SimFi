@@ -1,3 +1,5 @@
+import { ethers } from "ethers"
+
 export interface Artifact {
   contractName: string
   sourceName: string
@@ -14,4 +16,5 @@ export interface ContractData {
   deployTimestamp: number
   deployAccountName: string
   deployAccountAddress: string
+  ref: ethers.BaseContract
 }

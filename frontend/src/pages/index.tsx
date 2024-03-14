@@ -4,13 +4,12 @@ import { useMemo, useState } from "react"
 import { JsonRpcApiProvider, JsonRpcSigner, ethers } from "ethers"
 import { Layout, Typography, message } from 'antd'
 import { Artifact, ContractData } from '@/lib/const'
-import { getDefaultAccountNameMap } from '@/lib/utils'
+import { contractComponentMap, getDefaultAccountNameMap } from '@/lib/utils'
 import styles from "@/styles/index.module.css"
 import ConnectModal from "../components/index/ConnectModal"
 import DeployedListPanel from '@/components/index/DeployedListPanel'
 import HistoryPanel from '@/components/index/HistoryPanel'
 import InfoPanel from '@/components/index/InfoPanel'
-import { Contract } from 'ethers'
 
 export default function Index({ artifacts }: { artifacts: Artifact[] }) {
   const [provider, setProvider] = useState<JsonRpcApiProvider | null>(null) // 当前连接到hardhat网络的provider
@@ -21,9 +20,25 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
   const [currContract, setCurrContract] = useState<string>() // 当前选中的合约
   const [messageApi, contextHolder] = message.useMessage()
 
+  // 当前是否连接到hardhat网络
   const hasProvider = useMemo<boolean>(() => {
     return provider instanceof JsonRpcApiProvider
   }, [provider])
+
+  // 当前选中合约要显示的组件
+  const ContractComponent = useMemo(() => {
+    if (!currContract) {
+      return null
+    }
+
+    const contract = contracts.find(contract => contract.address === currContract)
+
+    if (!contract) {
+      return null
+    }
+
+    return contractComponentMap[contract.name] || null
+  }, [contracts, currContract])
 
   const handleConnect = async (url: string) => {
     try {
@@ -56,14 +71,15 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
 
     if (signer !== undefined && !!signer.address) {
       try {
-        const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, signer)
-        const contract = await factory.deploy()
-        await contract.waitForDeployment()
-        const deployedAddress = await contract.getAddress()
+        const factory: ethers.ContractFactory<any[], any> = new ethers.ContractFactory(artifact.abi, artifact.bytecode, signer)
+        const contractRef = await factory.deploy()
+        await contractRef.waitForDeployment()
+        const deployedAddress = await contractRef.getAddress()
 
         if (contracts.length === 0) {
           setCurrContract(deployedAddress)
         }
+
         setContracts(contract => {
           return [
             {
@@ -71,7 +87,8 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
               name: artifact.contractName,
               deployTimestamp: new Date().getTime(),
               deployAccountAddress: signer.address,
-              deployAccountName: accountNameMap[signer.address]
+              deployAccountName: accountNameMap[signer.address],
+              ref: contractRef
             },
             ...contract
           ]
@@ -134,7 +151,9 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
               onDelete={handleDeleteContract}
             />
           </Layout.Sider>
-          <Layout.Content></Layout.Content>
+          <Layout.Content>
+            {ContractComponent ? <ContractComponent /> : null}
+          </Layout.Content>
           <Layout.Sider width="300" className={styles.right_sider}>
             <HistoryPanel />
           </Layout.Sider>
