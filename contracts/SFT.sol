@@ -5,8 +5,8 @@ import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IERC20Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
 contract SFT is IERC20, IERC20Errors {
-    string public name = "SimFi Token";
-    string public symbol = "SFT";
+    string public constant name = "SimFi Token";
+    string public constant symbol = "SFT";
     address public immutable owner;
 
     uint256 public totalSupply; // 货币总供应

@@ -1,6 +1,6 @@
 import { JsonRpcSigner } from "ethers"
 import dynamic from "next/dynamic"
-import { ComponentType } from "react"
+import { ContractConfig, StateMutability } from "./const"
 
 export const HARDHAT_NODE_URL = "http://localhost:8545"
 
@@ -13,6 +13,19 @@ export const getDefaultAccountNameMap = (accounts: JsonRpcSigner[]) => {
   return map
 }
 
-export const contractComponentMap: Record<string, ComponentType<any>> = {
-  'SFT': dynamic(() => import('@/components/index/ContractSFT'))
+export const contractConfig: ContractConfig = {
+  'SFT': {
+    component: dynamic(() => import('@/components/index/ContractSFT')),
+    functions: [
+      {
+        name: 'totalSupply',
+        inputs: [],
+        outputs: [],
+        stateMutability: StateMutability.View,
+        getDescription: (...args: any) => {
+          return ''
+        }
+      }
+    ]
+  }
 }

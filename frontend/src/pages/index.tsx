@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import { JsonRpcApiProvider, JsonRpcSigner, ethers } from "ethers"
 import { Layout, Typography, message } from 'antd'
 import { Artifact, ContractData } from '@/lib/const'
-import { contractComponentMap, getDefaultAccountNameMap } from '@/lib/utils'
+import { contractConfig, getDefaultAccountNameMap } from '@/lib/utils'
 import styles from "@/styles/index.module.css"
 import ConnectModal from "../components/index/ConnectModal"
 import DeployedListPanel from '@/components/index/DeployedListPanel'
@@ -37,7 +37,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
       return null
     }
 
-    return contractComponentMap[contract.name] || null
+    return contractConfig[contract.name]?.component || null
   }, [contracts, currContract])
 
   const handleConnect = async (url: string) => {
