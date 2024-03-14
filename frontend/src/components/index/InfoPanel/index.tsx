@@ -2,7 +2,7 @@ import { Button, Card, Form, Select, Space, Typography, message } from "antd"
 import { useState } from "react"
 import { Artifact } from "@/lib/const"
 import { AccountData } from "./const"
-import AccountListModal from "../AccountListModal"
+import AccountListModal from "./AccountListModal"
 
 interface Props {
   accounts: AccountData[]

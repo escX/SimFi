@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { List, Modal, Typography } from "antd"
-import { AccountData } from "../InfoPanel/const"
+import { AccountData } from "../const"
 
 interface Props {
   accounts: AccountData[]
