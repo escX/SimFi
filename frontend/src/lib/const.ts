@@ -1,5 +1,5 @@
-import { ethers } from "ethers"
-import { ComponentType } from "react"
+import { AccountData } from "@/components/index/InfoPanel/const"
+import { BaseContract } from "ethers"
 
 export interface Artifact {
   contractName: string
@@ -17,7 +17,7 @@ export interface ContractData {
   deployTimestamp: number
   deployAccountName: string
   deployAccountAddress: string
-  ref: ethers.BaseContract
+  ref: BaseContract & Omit<any, keyof BaseContract>
 }
 
 export enum StateMutability {
@@ -27,22 +27,24 @@ export enum StateMutability {
   Payable
 }
 
-interface InputArguement {
-  type: string
-  isAccount?: boolean
+export enum ArgType {
+  Uint256 = 'uint256',
+  Address = 'address',
 }
 
-interface FunctionConfig {
+export enum ArgStyle {
+  AccountSelect,
+  BigintInput,
+}
+
+export interface InputConfig {
+  type: ArgType,
+  style: ArgStyle
+}
+
+export interface ContractFunctionConfig {
   name: string
-  inputs: InputArguement[]
-  outputs: any[]
+  inputs: InputConfig[]
   stateMutability: StateMutability
-  getDescription: (...args: any) => string
-}
-
-export interface ContractConfig {
-  [key: string]: {
-    component: ComponentType<any>
-    functions: FunctionConfig[]
-  }
+  getDescription: (inputs: any[], outputs: any[], accounts: AccountData[]) => React.ReactNode
 }

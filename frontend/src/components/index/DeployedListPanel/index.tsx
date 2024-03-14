@@ -4,24 +4,24 @@ import { useMemo } from "react"
 
 interface Props {
   contracts: ContractData[]
-  currContract: string | undefined
+  currContractAddress: string | undefined
   onChangeCurrContract: (address: string) => void
   onDelete: (address: string) => void
 }
 
-export default function Index({ contracts, currContract, onChangeCurrContract, onDelete }: Props) {
+export default function Index({ contracts, currContractAddress, onChangeCurrContract, onDelete }: Props) {
   const sortedContracts = useMemo(() => {
-    const thisContract = contracts.find(contract => contract.address === currContract)
+    const thisContract = contracts.find(contract => contract.address === currContractAddress)
 
     if (!!thisContract) {
       return [
         thisContract,
-        ...contracts.filter(contract => contract.address !== currContract)
+        ...contracts.filter(contract => contract.address !== currContractAddress)
       ]
     }
 
     return contracts
-  }, [contracts, currContract])
+  }, [contracts, currContractAddress])
 
   return (
     <Card>
@@ -40,7 +40,7 @@ export default function Index({ contracts, currContract, onChangeCurrContract, o
             >
               <Typography.Link>删除</Typography.Link>
             </Popconfirm>,
-            item.address === currContract ?
+            item.address === currContractAddress ?
               <Typography.Text key="check" type="secondary">当前合约</Typography.Text> :
               <Typography.Link key="check" onClick={() => onChangeCurrContract(item.address)}>选择</Typography.Link>,
           ]}>

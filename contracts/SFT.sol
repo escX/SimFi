@@ -25,14 +25,6 @@ contract SFT is IERC20, IERC20Errors {
         owner = msg.sender;
     }
 
-    receive() external payable {
-        emit Transfer(msg.sender, address(this), msg.value);
-    }
-
-    fallback() external payable {
-        emit Transfer(msg.sender, address(this), msg.value);
-    }
-
     // 调用者转账给_to账户
     function transfer(address _to, uint256 _value) external returns (bool) {
         uint256 _fromBalance = balanceOf[msg.sender];

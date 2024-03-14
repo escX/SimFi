@@ -4,13 +4,13 @@ import { AccountData } from "../const"
 
 interface Props {
   accounts: AccountData[]
-  currAccount: string | undefined
+  currAccountAddress: string | undefined
   visible: boolean
   onCancel: () => void
   onConfirm: (names: Record<string, string>) => void
 }
 
-export default function Index({ accounts, currAccount, visible, onCancel, onConfirm }: Props) {
+export default function Index({ accounts, currAccountAddress, visible, onCancel, onConfirm }: Props) {
   const [names, setNames] = useState<Record<string, string>>({})
 
   useEffect(() => {
@@ -48,7 +48,7 @@ export default function Index({ accounts, currAccount, visible, onCancel, onConf
                   }
                 },
               }}>
-                {currAccount === item.address ?
+                {currAccountAddress === item.address ?
                   <Typography.Text type="secondary">[当前账户]&nbsp;</Typography.Text> :
                   null
                 }

@@ -12,16 +12,12 @@ export default function Index({ visible, onConfirm }: Props) {
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false)
 
   const handleConfirm = () => {
-    setConfirmLoading(true)
-
     formRef.validateFields().then((values) => {
-      onConfirm(values.url).then(() => {
-        setConfirmLoading(false)
-      }).catch(() => {
+      setConfirmLoading(true)
+
+      onConfirm(values.url).finally(() => {
         setConfirmLoading(false)
       })
-    }).catch(() => {
-      setConfirmLoading(false)
     })
   }
 

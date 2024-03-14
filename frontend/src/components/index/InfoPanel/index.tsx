@@ -7,13 +7,13 @@ import AccountListModal from "./AccountListModal"
 interface Props {
   accounts: AccountData[]
   artifacts: Artifact[]
-  currAccount: string | undefined
+  currAccountAddress: string | undefined
   onAccountChange: (address: string | undefined) => void
   onDeploy: (artifact: Artifact) => Promise<void>
   onAccountNameChange: (names: Record<string, string>) => void
 }
 
-export default function Index({ accounts, artifacts, currAccount, onAccountChange, onDeploy, onAccountNameChange }: Props) {
+export default function Index({ accounts, artifacts, currAccountAddress, onAccountChange, onDeploy, onAccountNameChange }: Props) {
   const [currArtifact, setCurrArtifact] = useState<string>()
   const [accountListVisible, setAccountListVisible] = useState<boolean>(false)
   const [deployLoading, setDeployLoading] = useState<boolean>(false)
@@ -52,7 +52,7 @@ export default function Index({ accounts, artifacts, currAccount, onAccountChang
           <Select
             options={accounts}
             fieldNames={{ label: 'name', value: 'address' }}
-            value={currAccount}
+            value={currAccountAddress}
             onChange={onAccountChange}
           />
         </Form.Item>
@@ -75,7 +75,7 @@ export default function Index({ accounts, artifacts, currAccount, onAccountChang
 
       <AccountListModal
         accounts={accounts}
-        currAccount={currAccount}
+        currAccountAddress={currAccountAddress}
         visible={accountListVisible}
         onCancel={() => setAccountListVisible(false)}
         onConfirm={handleChangeAccountName}

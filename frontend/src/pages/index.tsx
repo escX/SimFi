@@ -4,7 +4,8 @@ import { useMemo, useState } from "react"
 import { JsonRpcApiProvider, JsonRpcSigner, ethers } from "ethers"
 import { Layout, Typography, message } from 'antd'
 import { Artifact, ContractData } from '@/lib/const'
-import { contractConfig, getDefaultAccountNameMap } from '@/lib/utils'
+import { contractComponent, getDefaultAccountNameMap } from '@/lib/utils'
+import { InputValueData } from '@/components/common/FuncExecution/const'
 import styles from "@/styles/index.module.css"
 import ConnectModal from "../components/index/ConnectModal"
 import DeployedListPanel from '@/components/index/DeployedListPanel'
@@ -16,8 +17,8 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
   const [accounts, setAccounts] = useState<JsonRpcSigner[]>([]) // 账户列表
   const [accountNameMap, setAccountNameMap] = useState<Record<string, string>>({}) // 账户地址和名称的映射
   const [contracts, setContracts] = useState<ContractData[]>([]) // 已部署合约列表
-  const [currAccount, setCurrAccount] = useState<string>() // 当前选中的账户
-  const [currContract, setCurrContract] = useState<string>() // 当前选中的合约
+  const [currAccountAddress, setCurrAccountAddress] = useState<string>() // 当前选中的账户地址
+  const [currContractAddress, setCurrContractAddress] = useState<string>() // 当前选中的合约地址
   const [messageApi, contextHolder] = message.useMessage()
 
   // 当前是否连接到hardhat网络
@@ -25,20 +26,23 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
     return provider instanceof JsonRpcApiProvider
   }, [provider])
 
+  // 当前选中的合约
+  const currContract = useMemo(() => {
+    return contracts.find(contract => contract.address === currContractAddress) ?? null
+  }, [currContractAddress, contracts])
+
   // 当前选中合约要显示的组件
   const ContractComponent = useMemo(() => {
-    if (!currContract) {
-      return null
-    }
+    return currContract ? contractComponent[currContract.name] ?? null : null
+  }, [currContract])
 
-    const contract = contracts.find(contract => contract.address === currContract)
-
-    if (!contract) {
-      return null
-    }
-
-    return contractConfig[contract.name]?.component || null
-  }, [contracts, currContract])
+  // 账户地址和别名数组
+  const accountList = useMemo(() => {
+    return accounts.map(account => ({
+      address: account.address,
+      name: accountNameMap[account.address]
+    }))
+  }, [accounts, accountNameMap])
 
   const handleConnect = async (url: string) => {
     try {
@@ -47,7 +51,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
 
       setProvider(provider)
       setAccounts(accounts)
-      setCurrAccount(accounts[0].address)
+      setCurrAccountAddress(accounts[0].address)
       setAccountNameMap(getDefaultAccountNameMap(accounts))
 
       messageApi.open({
@@ -67,7 +71,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
   }
 
   const handleDepoly = async (artifact: Artifact) => {
-    const signer = accounts.find(account => account.address === currAccount)
+    const signer = accounts.find(account => account.address === currAccountAddress)
 
     if (signer !== undefined && !!signer.address) {
       try {
@@ -77,7 +81,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
         const deployedAddress = await contractRef.getAddress()
 
         if (contracts.length === 0) {
-          setCurrContract(deployedAddress)
+          setCurrContractAddress(deployedAddress)
         }
 
         setContracts(contract => {
@@ -120,8 +124,37 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
 
   const handleDeleteContract = (address: string) => {
     setContracts(contracts => contracts.filter(contract => contract.address !== address))
-    if (currContract === address) {
-      setCurrContract(undefined)
+    if (currContractAddress === address) {
+      setCurrContractAddress(undefined)
+    }
+  }
+
+  const handleExecFunction = async (funcName: string, args: InputValueData[]) => {
+    if (!!currContract) {
+      try {
+        const result = await currContract.ref[funcName](...args)
+
+        messageApi.open({
+          type: 'success',
+          content: '执行成功',
+        })
+
+        return Promise.resolve(result)
+      } catch (error) {
+        messageApi.open({
+          type: 'error',
+          content: '无法获取当前账户',
+        })
+
+        return Promise.reject()
+      }
+    } else {
+      messageApi.open({
+        type: 'error',
+        content: '无法获取当前合约',
+      })
+
+      return Promise.reject()
     }
   }
 
@@ -134,25 +167,22 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
         <Layout>
           <Layout.Sider width="480" className={styles.left_sider}>
             <InfoPanel
-              accounts={accounts.map(account => ({
-                address: account.address,
-                name: accountNameMap[account.address]
-              }))}
+              accounts={accountList}
               artifacts={artifacts}
-              currAccount={currAccount}
-              onAccountChange={setCurrAccount}
+              currAccountAddress={currAccountAddress}
+              onAccountChange={setCurrAccountAddress}
               onDeploy={handleDepoly}
               onAccountNameChange={setAccountNameMap}
             />
             <DeployedListPanel
               contracts={contracts}
-              currContract={currContract}
-              onChangeCurrContract={setCurrContract}
+              currContractAddress={currContractAddress}
+              onChangeCurrContract={setCurrContractAddress}
               onDelete={handleDeleteContract}
             />
           </Layout.Sider>
           <Layout.Content>
-            {ContractComponent ? <ContractComponent /> : null}
+            {ContractComponent ? <ContractComponent accounts={accountList} onExecFunction={handleExecFunction} /> : null}
           </Layout.Content>
           <Layout.Sider width="300" className={styles.right_sider}>
             <HistoryPanel />
