@@ -67,7 +67,7 @@ export default function Index({ contracts, currContractAddress, onChangeCurrCont
                         {item.deployAccountAddress}
                       </Typography.Text>
                     }>
-                      <Typography.Text type="secondary">
+                      <Typography.Text type="secondary" underline>
                         {item.deployAccountName}
                       </Typography.Text>
                     </Tooltip>

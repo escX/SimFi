@@ -31,6 +31,11 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
     return contracts.find(contract => contract.address === currContractAddress) ?? null
   }, [currContractAddress, contracts])
 
+  // 当前选中的账户
+  const currAccount = useMemo(() => {
+    return accounts.find(account => account.address === currAccountAddress) ?? null
+  }, [currAccountAddress, accounts])
+
   // 当前选中合约要显示的组件
   const ContractComponent = useMemo(() => {
     return currContract ? contractComponent[currContract.name] ?? null : null
@@ -71,11 +76,9 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
   }
 
   const handleDepoly = async (artifact: Artifact) => {
-    const signer = accounts.find(account => account.address === currAccountAddress)
-
-    if (signer !== undefined && !!signer.address) {
+    if (!!currAccount && !!currAccount.address) {
       try {
-        const factory: ethers.ContractFactory<any[], any> = new ethers.ContractFactory(artifact.abi, artifact.bytecode, signer)
+        const factory: ethers.ContractFactory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, currAccount)
         const contractRef = await factory.deploy()
         await contractRef.waitForDeployment()
         const deployedAddress = await contractRef.getAddress()
@@ -90,8 +93,8 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
               address: deployedAddress,
               name: artifact.contractName,
               deployTimestamp: new Date().getTime(),
-              deployAccountAddress: signer.address,
-              deployAccountName: accountNameMap[signer.address],
+              deployAccountAddress: currAccount.address,
+              deployAccountName: accountNameMap[currAccount.address],
               ref: contractRef
             },
             ...contract
@@ -132,7 +135,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
   const handleExecFunction = async (funcName: string, args: InputValueData[]) => {
     if (!!currContract) {
       try {
-        const result = await currContract.ref[funcName](...args)
+        const result = await currContract.ref.connect(currAccount).getFunction(funcName)(...args)
 
         messageApi.open({
           type: 'success',
@@ -143,7 +146,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
       } catch (error) {
         messageApi.open({
           type: 'error',
-          content: '无法获取当前账户',
+          content: '执行失败',
         })
 
         return Promise.reject()

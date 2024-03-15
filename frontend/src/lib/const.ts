@@ -17,7 +17,7 @@ export interface ContractData {
   deployTimestamp: number
   deployAccountName: string
   deployAccountAddress: string
-  ref: BaseContract & Omit<any, keyof BaseContract>
+  ref: BaseContract
 }
 
 export enum StateMutability {
