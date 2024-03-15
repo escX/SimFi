@@ -21,7 +21,7 @@ export const SFTFunctions: ContractFunctionConfig[] = [
     stateMutability: StateMutability.View,
     getDescription: (inputs, outputs, accounts) => {
       return <Typography.Text>
-        查询账户{getDescData(getAccountNameByAddress(accounts, inputs[0]))}的余额为{getDescData(inputs[1])}
+        查询账户{getDescData(getAccountNameByAddress(accounts, inputs[0]))}的余额为{getDescData(outputs[0])}
       </Typography.Text>
     }
   },
@@ -34,7 +34,7 @@ export const SFTFunctions: ContractFunctionConfig[] = [
     stateMutability: StateMutability.View,
     getDescription: (inputs, outputs, accounts) => {
       return <Typography.Text>
-        查询账户{getDescData(getAccountNameByAddress(accounts, inputs[0]))}授权账户{getDescData(getAccountNameByAddress(accounts, inputs[1]))}的转账额度为{getDescData(inputs[2])}
+        查询账户{getDescData(getAccountNameByAddress(accounts, inputs[0]))}授权账户{getDescData(getAccountNameByAddress(accounts, inputs[1]))}的转账额度为{getDescData(outputs[0])}
       </Typography.Text>
     }
   },

@@ -1,19 +1,22 @@
-import { ArgStyle, ArgType, ContractFunctionConfig, StateMutability } from "@/lib/const"
+import { ArgStyle, ArgType, ContractFunctionConfig, ExecResult, StateMutability } from "@/lib/const"
 import { Button, Space } from "antd"
 import { useState } from "react"
 import { InputValueData } from "./const"
 import { AccountData } from "@/components/index/InfoPanel/const"
+import { ContractTransactionResponse, ContractTransactionReceipt } from "ethers"
 import AccountSelect from "./AccountSelect"
 import BigintInput from "./BigintInput"
 
 interface Props extends ContractFunctionConfig {
   accounts: AccountData[]
-  onExecFunction: (funcName: string, args: InputValueData[]) => Promise<any>
+  onExecFunction: (funcName: string, args: InputValueData[]) => Promise<ExecResult>
 }
 
 export default function Index({ name, inputs, stateMutability, getDescription, accounts, onExecFunction }: Props) {
   const [inputValues, setInputValues] = useState<InputValueData[]>([])
   const [outputValues, setOutputValues] = useState<any[]>([])
+  const [transactionResponse, setTransactionResponse] = useState<ContractTransactionResponse | null>(null)
+  const [transactionReceipt, setTransactionReceipt] = useState<ContractTransactionReceipt | null>(null)
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false)
 
   const handleValueChange = (index: number, value: InputValueData) => {
@@ -26,10 +29,20 @@ export default function Index({ name, inputs, stateMutability, getDescription, a
   const handleClick = () => {
     setConfirmLoading(true)
 
-    onExecFunction(name, inputValues).then(data => {
-      console.log(data)
-    }).catch(error => {
-      console.log(error)
+    onExecFunction(name, inputValues).then(({response, receipt}) => {
+      if (response instanceof ContractTransactionResponse) {
+        setTransactionResponse(response)
+      } else {
+        if (Object.prototype.toString.call(response) === '[object Proxy]') {
+          setOutputValues(response.toArray())
+        } else {
+          setOutputValues([response.toString()] ?? [])
+        }
+      }
+
+      if (receipt instanceof ContractTransactionReceipt) {
+        setTransactionReceipt(receipt)
+      }
     }).finally(() => {
       setConfirmLoading(false)
     })

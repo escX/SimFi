@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { useMemo, useState } from "react"
-import { JsonRpcApiProvider, JsonRpcSigner, ethers } from "ethers"
+import { ContractTransactionResponse, ContractTransactionReceipt, JsonRpcApiProvider, JsonRpcSigner, ethers } from "ethers"
 import { Layout, Typography, message } from 'antd'
 import { Artifact, ContractData } from '@/lib/const'
 import { contractComponent, getDefaultAccountNameMap } from '@/lib/utils'
@@ -71,11 +71,12 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
         content: '无法连接到Hardhat网络',
       })
 
+      console.error(error)
       return Promise.reject()
     }
   }
 
-  const handleDepoly = async (artifact: Artifact) => {
+  const handleDeploy = async (artifact: Artifact) => {
     if (!!currAccount && !!currAccount.address) {
       try {
         const factory: ethers.ContractFactory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, currAccount)
@@ -113,6 +114,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
           content: '部署失败',
         })
 
+        console.error(error)
         return Promise.reject()
       }
     } else {
@@ -135,20 +137,26 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
   const handleExecFunction = async (funcName: string, args: InputValueData[]) => {
     if (!!currContract) {
       try {
-        const result = await currContract.ref.connect(currAccount).getFunction(funcName)(...args)
+        const response = await currContract.ref.connect(currAccount).getFunction(funcName)(...args)
+        let receipt: ContractTransactionReceipt | null = null
+
+        if (response instanceof ContractTransactionResponse) {
+          receipt = await response.wait()
+        }
 
         messageApi.open({
           type: 'success',
           content: '执行成功',
         })
 
-        return Promise.resolve(result)
+        return Promise.resolve({response, receipt})
       } catch (error) {
         messageApi.open({
           type: 'error',
           content: '执行失败',
         })
 
+        console.error(error)
         return Promise.reject()
       }
     } else {
@@ -174,7 +182,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
               artifacts={artifacts}
               currAccountAddress={currAccountAddress}
               onAccountChange={setCurrAccountAddress}
-              onDeploy={handleDepoly}
+              onDeploy={handleDeploy}
               onAccountNameChange={setAccountNameMap}
             />
             <DeployedListPanel
@@ -216,7 +224,9 @@ export async function getStaticProps() {
           if (!!contentJson.abi && !!contentJson.bytecode) {
             artifacts.push(contentJson)
           }
-        } catch (error) { }
+        } catch (error) {
+          console.error(error)
+        }
       }
     })
   }

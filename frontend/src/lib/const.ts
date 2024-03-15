@@ -1,5 +1,5 @@
 import { AccountData } from "@/components/index/InfoPanel/const"
-import { BaseContract } from "ethers"
+import { ContractTransactionReceipt, BaseContract } from "ethers"
 
 export interface Artifact {
   contractName: string
@@ -47,4 +47,9 @@ export interface ContractFunctionConfig {
   inputs: InputConfig[]
   stateMutability: StateMutability
   getDescription: (inputs: any[], outputs: any[], accounts: AccountData[]) => React.ReactNode
+}
+
+export interface ExecResult {
+  response: any
+  receipt: ContractTransactionReceipt | null
 }
