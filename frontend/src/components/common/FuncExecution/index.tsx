@@ -1,4 +1,4 @@
-import { ArgStyle, ArgType, ContractFunctionConfig, ExecResult, StateMutability } from "@/lib/const"
+import { ArgStyle, ArgType, ContractFunctionConfig, ExecResult, HistoryRecordProvided, StateMutability } from "@/lib/const"
 import { Button, Space } from "antd"
 import { useState } from "react"
 import { InputValueData } from "./const"
@@ -10,9 +10,10 @@ import BigintInput from "./BigintInput"
 interface Props extends ContractFunctionConfig {
   accounts: AccountData[]
   onExecFunction: (funcName: string, args: InputValueData[]) => Promise<ExecResult>
+  onHistoryRecord: (data: HistoryRecordProvided) => void
 }
 
-export default function Index({ name, inputs, stateMutability, getDescription, accounts, onExecFunction }: Props) {
+export default function Index({ name, inputs, stateMutability, getDescription, accounts, onExecFunction, onHistoryRecord }: Props) {
   const [inputValues, setInputValues] = useState<InputValueData[]>([])
   const [outputValues, setOutputValues] = useState<any[]>([])
   const [transactionResponse, setTransactionResponse] = useState<ContractTransactionResponse | null>(null)
@@ -26,12 +27,21 @@ export default function Index({ name, inputs, stateMutability, getDescription, a
     setInputValues(data)
   }
 
-  const handleClick = () => {
+  const handleExec = () => {
     setConfirmLoading(true)
 
-    onExecFunction(name, inputValues).then(({response, receipt}) => {
+    onExecFunction(name, inputValues).then(({ response, receipt }) => {
+      const transactionData: {
+        transactionResponse: ContractTransactionResponse | null
+        transactionReceipt: ContractTransactionReceipt | null
+      } = {
+        transactionResponse: null,
+        transactionReceipt: null
+      }
+
       if (response instanceof ContractTransactionResponse) {
         setTransactionResponse(response)
+        transactionData.transactionResponse = response
       } else {
         if (Object.prototype.toString.call(response) === '[object Proxy]') {
           setOutputValues(response.toArray())
@@ -42,7 +52,19 @@ export default function Index({ name, inputs, stateMutability, getDescription, a
 
       if (receipt instanceof ContractTransactionReceipt) {
         setTransactionReceipt(receipt)
+        transactionData.transactionReceipt = receipt
       }
+
+      onHistoryRecord({
+        timestamp: new Date().getTime(),
+        functionName: name,
+        description: {
+          inputs: inputValues,
+          outputs: outputValues,
+          getDescription: getDescription
+        },
+        ...transactionData
+      })
     }).finally(() => {
       setConfirmLoading(false)
     })
@@ -50,11 +72,11 @@ export default function Index({ name, inputs, stateMutability, getDescription, a
 
   const getButtonNode = () => {
     if (stateMutability === StateMutability.Nonpayable) {
-      return <Button type="primary" onClick={handleClick} loading={confirmLoading}>{name}</Button>
+      return <Button type="primary" onClick={handleExec} loading={confirmLoading}>{name}</Button>
     }
 
     if (stateMutability === StateMutability.View) {
-      return <Button onClick={handleClick} loading={confirmLoading}>{name}</Button>
+      return <Button onClick={handleExec} loading={confirmLoading}>{name}</Button>
     }
 
     return null

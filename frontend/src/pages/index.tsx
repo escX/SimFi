@@ -3,7 +3,7 @@ import path from 'path'
 import { useMemo, useState } from "react"
 import { ContractTransactionResponse, ContractTransactionReceipt, JsonRpcApiProvider, JsonRpcSigner, ethers } from "ethers"
 import { Layout, Typography, message } from 'antd'
-import { Artifact, ContractData } from '@/lib/const'
+import { Artifact, ContractData, HistoryRecord, HistoryRecordProvided } from '@/lib/const'
 import { contractComponent, getDefaultAccountNameMap } from '@/lib/utils'
 import { InputValueData } from '@/components/common/FuncExecution/const'
 import styles from "@/styles/index.module.css"
@@ -19,6 +19,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
   const [contracts, setContracts] = useState<ContractData[]>([]) // 已部署合约列表
   const [currAccountAddress, setCurrAccountAddress] = useState<string>() // 当前选中的账户地址
   const [currContractAddress, setCurrContractAddress] = useState<string>() // 当前选中的合约地址
+  const [historyRecord, setHistoryRecord] = useState<HistoryRecord[]>([]) // 合约操作历史记录
   const [messageApi, contextHolder] = message.useMessage()
 
   // 当前是否连接到hardhat网络
@@ -149,7 +150,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
           content: '执行成功',
         })
 
-        return Promise.resolve({response, receipt})
+        return Promise.resolve({ response, receipt })
       } catch (error) {
         messageApi.open({
           type: 'error',
@@ -193,7 +194,20 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
             />
           </Layout.Sider>
           <Layout.Content>
-            {ContractComponent ? <ContractComponent accounts={accountList} onExecFunction={handleExecFunction} /> : null}
+            {ContractComponent ?
+              <ContractComponent
+                accounts={accountList}
+                onExecFunction={handleExecFunction}
+                onHistoryRecord={(newData: HistoryRecordProvided) => {
+                  setHistoryRecord(data => [...data, {
+                    ...newData,
+                    accountAddress: currAccountAddress!,
+                    contractName: currContract!.name,
+                  }])
+                }}
+              /> :
+              null
+            }
           </Layout.Content>
           <Layout.Sider width="300" className={styles.right_sider}>
             <HistoryPanel />

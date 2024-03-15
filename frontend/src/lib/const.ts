@@ -1,5 +1,6 @@
+import { InputValueData } from "@/components/common/FuncExecution/const"
 import { AccountData } from "@/components/index/InfoPanel/const"
-import { ContractTransactionReceipt, BaseContract } from "ethers"
+import { BaseContract, ContractTransactionReceipt, ContractTransactionResponse } from "ethers"
 
 export interface Artifact {
   contractName: string
@@ -53,3 +54,19 @@ export interface ExecResult {
   response: any
   receipt: ContractTransactionReceipt | null
 }
+
+export interface HistoryRecord {
+  accountAddress: string
+  contractName: string
+  timestamp: number
+  functionName: string
+  description: {
+    inputs: InputValueData[]
+    outputs: any[]
+    getDescription: (inputs: any[], outputs: any[], accounts: AccountData[]) => React.ReactNode
+  }
+  transactionResponse: ContractTransactionResponse | null
+  transactionReceipt: ContractTransactionReceipt | null
+}
+
+export type HistoryRecordProvided = Omit<HistoryRecord, 'accountAddress' | 'contractName'>
