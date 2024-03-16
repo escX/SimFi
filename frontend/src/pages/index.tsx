@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { useMemo, useState } from "react"
 import { ContractTransactionResponse, ContractTransactionReceipt, JsonRpcApiProvider, JsonRpcSigner, ethers } from "ethers"
-import { Layout, Typography, message } from 'antd'
+import { Card, Empty, Layout, Typography, message } from 'antd'
 import { Artifact, ContractData, HistoryRecord, HistoryRecordProvided } from '@/lib/const'
 import { contractComponent, getDefaultAccountNameMap } from '@/lib/utils'
 import { InputValueData } from '@/components/common/FuncExecution/const'
@@ -194,22 +194,24 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
             />
           </Layout.Sider>
           <Layout.Content>
-            {ContractComponent ?
-              <ContractComponent
-                accounts={accountList}
-                onExecFunction={handleExecFunction}
-                onHistoryRecord={(newData: HistoryRecordProvided) => {
-                  setHistoryRecord(data => [...data, {
-                    ...newData,
-                    accountAddress: currAccountAddress!,
-                    contractAddress: currContractAddress!,
-                    contractName: currContract!.name,
-                    contractTimestamp: currContract!.deployTimestamp
-                  }])
-                }}
-              /> :
-              null
-            }
+            <Card title={`${currContract ? currContract.name : ''}合约可执行方法`}>
+              {ContractComponent ?
+                <ContractComponent
+                  accounts={accountList}
+                  onExecFunction={handleExecFunction}
+                  onHistoryRecord={(newData: HistoryRecordProvided) => {
+                    setHistoryRecord(data => [...data, {
+                      ...newData,
+                      accountAddress: currAccountAddress!,
+                      contractAddress: currContractAddress!,
+                      contractName: currContract!.name,
+                      contractTimestamp: currContract!.deployTimestamp
+                    }])
+                  }}
+                /> :
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
+              }
+            </Card>
           </Layout.Content>
           <Layout.Sider width="420" className={styles.right_sider}>
             <HistoryPanel historyRecord={historyRecord} accounts={accountList} contracts={contracts} />

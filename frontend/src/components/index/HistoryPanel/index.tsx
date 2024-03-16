@@ -1,5 +1,5 @@
 import { ContractData, HistoryRecord } from "@/lib/const"
-import { Card, Divider, Space, Tag, Typography } from "antd"
+import { Card, Divider, Empty, Space, Tag, Typography } from "antd"
 import { UserOutlined, AuditOutlined, FunctionOutlined, FieldTimeOutlined, CloseOutlined } from "@ant-design/icons"
 import { AccountData } from "../InfoPanel/const"
 import { HistoryFilterData, colors } from "./const"
@@ -59,48 +59,51 @@ export default function Index({ historyRecord, accounts, contracts }: Props) {
           </Space>
         </div>
       }>
-        {recordAfterFilter.map((record, index) => {
-          const account = accounts.map((account, index) => ({ ...account, color: colors[index] })).find(account => account.address === record.accountAddress)!
-          const contract = contracts.find(contract => contract.address === record.contractAddress)
+        {recordAfterFilter.length === 0 ?
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} /> :
+          recordAfterFilter.map((record, index) => {
+            const account = accounts.map((account, index) => ({ ...account, color: colors[index] })).find(account => account.address === record.accountAddress)!
+            const contract = contracts.find(contract => contract.address === record.contractAddress)
 
-          return (
-            <div key={index}>
-              <div>
-                <Tag icon={<UserOutlined />} color={account.color}>{account.name}</Tag>
-                {record.getDescription(record.inputs, record.outputs, accounts)}
+            return (
+              <div key={index}>
+                <div>
+                  <Tag icon={<UserOutlined />} color={account.color}>{account.name}</Tag>
+                  {record.getDescription(record.inputs, record.outputs, accounts)}
+                </div>
+
+                <div style={{ marginTop: 12 }}>
+                  <Tag
+                    icon={contract === undefined ? <CloseOutlined /> : <AuditOutlined />}
+                    color={contract === undefined ? 'error' : ''}
+                    bordered={false}
+                  >
+                    {`${record.contractName}: ${new Date(record.contractTimestamp).toLocaleString()}`}
+                  </Tag>
+                  <Tag
+                    icon={contract === undefined ? <CloseOutlined /> : <FunctionOutlined />}
+                    color={contract === undefined ? 'error' : ''}
+                    bordered={false}
+                  >
+                    {record.functionName}
+                  </Tag>
+                </div>
+
+                <div style={{ marginTop: 12 }}>
+                  <Tag
+                    icon={contract === undefined ? <CloseOutlined /> : <FieldTimeOutlined />}
+                    color={contract === undefined ? 'error' : ''}
+                    bordered={false}
+                  >
+                    {new Date(record.execTimestamp).toLocaleString()}
+                  </Tag>
+                </div>
+
+                <Divider />
               </div>
-
-              <div style={{ marginTop: 12 }}>
-                <Tag
-                  icon={contract === undefined ? <CloseOutlined /> : <AuditOutlined />}
-                  color={contract === undefined ? 'error' : ''}
-                  bordered={false}
-                >
-                  {`${record.contractName}: ${new Date(record.contractTimestamp).toLocaleString()}`}
-                </Tag>
-                <Tag
-                  icon={contract === undefined ? <CloseOutlined /> : <FunctionOutlined />}
-                  color={contract === undefined ? 'error' : ''}
-                  bordered={false}
-                >
-                  {record.functionName}
-                </Tag>
-              </div>
-
-              <div style={{ marginTop: 12 }}>
-                <Tag
-                  icon={contract === undefined ? <CloseOutlined /> : <FieldTimeOutlined />}
-                  color={contract === undefined ? 'error' : ''}
-                  bordered={false}
-                >
-                  {new Date(record.execTimestamp).toLocaleString()}
-                </Tag>
-              </div>
-
-              <Divider />
-            </div>
-          )
-        })}
+            )
+          })
+        }
       </Card>
 
       <FilterModal

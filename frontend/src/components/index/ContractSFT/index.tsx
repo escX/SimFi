@@ -1,4 +1,4 @@
-import { Card, Divider } from "antd"
+import { Divider } from "antd"
 import { SFTFunctions } from "./const"
 import FuncExecution from "@/components/common/FuncExecution"
 import { AccountData } from "../InfoPanel/const"
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default function Index({ accounts, onExecFunction, onHistoryRecord }: Props) {
-  return <Card title="SFT合约可执行方法">
+  return <>
     {SFTFunctions.map(config => (
       <div key={config.name}>
         <FuncExecution
@@ -24,5 +24,5 @@ export default function Index({ accounts, onExecFunction, onHistoryRecord }: Pro
         <Divider />
       </div>
     ))}
-  </Card>
+  </>
 }
