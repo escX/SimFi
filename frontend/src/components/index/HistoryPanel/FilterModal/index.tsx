@@ -17,8 +17,8 @@ export default function Index({ accounts, contracts, data, visible, onCancel, on
   const [formRef] = Form.useForm()
 
   useEffect(() => {
-    formRef.setFieldsValue(data)
-  }, [data])
+    visible && formRef.setFieldsValue(data)
+  }, [data, visible])
 
   return (
     <Modal

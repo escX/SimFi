@@ -1,5 +1,5 @@
 import { ArgStyle, ArgType, ContractFunctionConfig, StateMutability } from "@/lib/const"
-import { getAccountNameByAddress, getDescData } from "@/lib/utils"
+import { getAccountName, getDescNode } from "@/lib/utils"
 import { Typography } from "antd"
 
 export const SFTFunctions: ContractFunctionConfig[] = [
@@ -9,7 +9,7 @@ export const SFTFunctions: ContractFunctionConfig[] = [
     stateMutability: StateMutability.View,
     getDescription: (inputs, outputs, accounts) => {
       return <Typography.Text>
-        查询货币总供应量为{getDescData(outputs[0])}
+        查询货币总供应量为{getDescNode(outputs[0])}
       </Typography.Text>
     }
   },
@@ -21,7 +21,7 @@ export const SFTFunctions: ContractFunctionConfig[] = [
     stateMutability: StateMutability.View,
     getDescription: (inputs, outputs, accounts) => {
       return <Typography.Text>
-        查询账户{getDescData(getAccountNameByAddress(accounts, inputs[0]))}的余额为{getDescData(outputs[0])}
+        查询{getDescNode(getAccountName(accounts, inputs[0]))}的余额为{getDescNode(outputs[0])}
       </Typography.Text>
     }
   },
@@ -34,7 +34,7 @@ export const SFTFunctions: ContractFunctionConfig[] = [
     stateMutability: StateMutability.View,
     getDescription: (inputs, outputs, accounts) => {
       return <Typography.Text>
-        查询账户{getDescData(getAccountNameByAddress(accounts, inputs[0]))}授权账户{getDescData(getAccountNameByAddress(accounts, inputs[1]))}的转账额度为{getDescData(outputs[0])}
+        查询{getDescNode(getAccountName(accounts, inputs[0]))}授权{getDescNode(getAccountName(accounts, inputs[1]))}的转账额度为{getDescNode(outputs[0])}
       </Typography.Text>
     }
   },
@@ -46,7 +46,7 @@ export const SFTFunctions: ContractFunctionConfig[] = [
     stateMutability: StateMutability.Nonpayable,
     getDescription: (inputs, outputs, accounts) => {
       return <Typography.Text>
-        铸造货币量为{getDescData(inputs[0])}
+        铸造货币量为{getDescNode(inputs[0])}
       </Typography.Text>
     }
   },
@@ -58,7 +58,7 @@ export const SFTFunctions: ContractFunctionConfig[] = [
     stateMutability: StateMutability.Nonpayable,
     getDescription: (inputs, outputs, accounts) => {
       return <Typography.Text>
-        销毁货币量为{getDescData(inputs[0])}
+        销毁货币量为{getDescNode(inputs[0])}
       </Typography.Text>
     }
   },
@@ -71,7 +71,7 @@ export const SFTFunctions: ContractFunctionConfig[] = [
     stateMutability: StateMutability.Nonpayable,
     getDescription: (inputs, outputs, accounts) => {
       return <Typography.Text>
-        当前账户向账户{getDescData(getAccountNameByAddress(accounts, inputs[0]))}转账{getDescData(inputs[1])}
+        向{getDescNode(getAccountName(accounts, inputs[0]))}转账{getDescNode(inputs[1])}
       </Typography.Text>
     }
   },
@@ -84,7 +84,7 @@ export const SFTFunctions: ContractFunctionConfig[] = [
     stateMutability: StateMutability.Nonpayable,
     getDescription: (inputs, outputs, accounts) => {
       return <Typography.Text>
-        当前账户授权账户{getDescData(getAccountNameByAddress(accounts, inputs[0]))}的转账额度为{getDescData(inputs[1])}
+        授权{getDescNode(getAccountName(accounts, inputs[0]))}的转账额度为{getDescNode(inputs[1])}
       </Typography.Text>
     }
   },
@@ -98,7 +98,7 @@ export const SFTFunctions: ContractFunctionConfig[] = [
     stateMutability: StateMutability.Nonpayable,
     getDescription: (inputs, outputs, accounts) => {
       return <Typography.Text>
-        当前账户从账户{getDescData(getAccountNameByAddress(accounts, inputs[0]))}向账户{getDescData(getAccountNameByAddress(accounts, inputs[1]))}转账{getDescData(inputs[2])}
+        从{getDescNode(getAccountName(accounts, inputs[0]))}向{getDescNode(getAccountName(accounts, inputs[1]))}转账{getDescNode(inputs[2])}
       </Typography.Text>
     }
   },

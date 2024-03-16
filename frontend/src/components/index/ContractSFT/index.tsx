@@ -12,10 +12,15 @@ interface Props {
 }
 
 export default function Index({ accounts, onExecFunction, onHistoryRecord }: Props) {
-  return <Card>
+  return <Card title="SFT合约可执行方法">
     {SFTFunctions.map(config => (
       <div key={config.name}>
-        <FuncExecution {...config} accounts={accounts} onExecFunction={onExecFunction} onHistoryRecord={onHistoryRecord} />
+        <FuncExecution
+          {...config}
+          accounts={accounts}
+          onExecFunction={onExecFunction}
+          onHistoryRecord={onHistoryRecord}
+        />
         <Divider />
       </div>
     ))}

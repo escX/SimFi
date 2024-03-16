@@ -52,7 +52,7 @@ export default function Index({ historyRecord, accounts, contracts }: Props) {
     <>
       <Card title={
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <div>合约操作历史</div>
+          <div>执行合约方法历史</div>
           <Space style={{ fontWeight: 'normal' }}>
             <Typography.Link onClick={handleResetFilter}>重置</Typography.Link>
             <Typography.Link onClick={() => setFilterVisible(true)}>筛选</Typography.Link>
@@ -60,7 +60,6 @@ export default function Index({ historyRecord, accounts, contracts }: Props) {
         </div>
       }>
         {recordAfterFilter.map((record, index) => {
-          const description = record.description
           const account = accounts.map((account, index) => ({ ...account, color: colors[index] })).find(account => account.address === record.accountAddress)!
           const contract = contracts.find(contract => contract.address === record.contractAddress)
 
@@ -68,7 +67,7 @@ export default function Index({ historyRecord, accounts, contracts }: Props) {
             <div key={index}>
               <div>
                 <Tag icon={<UserOutlined />} color={account.color}>{account.name}</Tag>
-                {description.getDescription(description.inputs, description.outputs, accounts)}
+                {record.getDescription(record.inputs, record.outputs, accounts)}
               </div>
 
               <div style={{ marginTop: 12 }}>

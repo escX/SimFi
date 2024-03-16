@@ -16,7 +16,6 @@ export interface ContractData {
   address: string
   name: string
   deployTimestamp: number
-  deployAccountName: string
   deployAccountAddress: string
   ref: BaseContract
 }
@@ -62,11 +61,9 @@ export interface HistoryRecord {
   contractTimestamp: number
   execTimestamp: number
   functionName: string
-  description: {
-    inputs: InputValueData[]
-    outputs: any[]
-    getDescription: (inputs: any[], outputs: any[], accounts: AccountData[]) => React.ReactNode
-  }
+  inputs: InputValueData[]
+  outputs: any[]
+  getDescription: (inputs: any[], outputs: any[], accounts: AccountData[]) => React.ReactNode
   transactionResponse: ContractTransactionResponse | null
   transactionReceipt: ContractTransactionReceipt | null
 }

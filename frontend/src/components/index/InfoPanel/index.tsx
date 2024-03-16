@@ -45,7 +45,7 @@ export default function Index({ accounts, artifacts, currAccountAddress, onAccou
 
   return (
     <>
-      <Card>
+      <Card title="账户和部署">
         <Form.Item label="当前账户" extra={
           <Typography.Link onClick={() => setAccountListVisible(true)}>账户列表，修改账户名称</Typography.Link>
         }>

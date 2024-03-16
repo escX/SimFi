@@ -96,7 +96,6 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
               name: artifact.contractName,
               deployTimestamp: new Date().getTime(),
               deployAccountAddress: currAccount.address,
-              deployAccountName: accountNameMap[currAccount.address],
               ref: contractRef
             },
             ...contract
@@ -189,6 +188,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
             <DeployedListPanel
               contracts={contracts}
               currContractAddress={currContractAddress}
+              accountNameMap={accountNameMap}
               onChangeCurrContract={setCurrContractAddress}
               onDelete={handleDeleteContract}
             />

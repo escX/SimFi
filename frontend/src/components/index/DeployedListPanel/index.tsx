@@ -1,32 +1,19 @@
 import { ContractData } from "@/lib/const"
 import { Card, List, Popconfirm, Tooltip, Typography } from "antd"
-import { useMemo } from "react"
 
 interface Props {
   contracts: ContractData[]
   currContractAddress: string | undefined
+  accountNameMap: Record<string, string>
   onChangeCurrContract: (address: string) => void
   onDelete: (address: string) => void
 }
 
-export default function Index({ contracts, currContractAddress, onChangeCurrContract, onDelete }: Props) {
-  const sortedContracts = useMemo(() => {
-    const thisContract = contracts.find(contract => contract.address === currContractAddress)
-
-    if (!!thisContract) {
-      return [
-        thisContract,
-        ...contracts.filter(contract => contract.address !== currContractAddress)
-      ]
-    }
-
-    return contracts
-  }, [contracts, currContractAddress])
-
+export default function Index({ contracts, currContractAddress, accountNameMap, onChangeCurrContract, onDelete }: Props) {
   return (
-    <Card>
+    <Card title="已部署合约">
       <List
-        dataSource={sortedContracts}
+        dataSource={contracts}
         itemLayout="vertical"
         renderItem={(item) => (
           <List.Item actions={[
@@ -42,7 +29,7 @@ export default function Index({ contracts, currContractAddress, onChangeCurrCont
             </Popconfirm>,
             item.address === currContractAddress ?
               <Typography.Text key="check" type="secondary">当前合约</Typography.Text> :
-              <Typography.Link key="check" onClick={() => onChangeCurrContract(item.address)}>选择</Typography.Link>,
+              <Typography.Link key="check" onClick={() => onChangeCurrContract(item.address)}>切换合约</Typography.Link>,
           ]}>
             <List.Item.Meta
               title={item.name}
@@ -68,7 +55,7 @@ export default function Index({ contracts, currContractAddress, onChangeCurrCont
                       </Typography.Text>
                     }>
                       <Typography.Text type="secondary" underline>
-                        {item.deployAccountName}
+                        {accountNameMap[item.deployAccountAddress]}
                       </Typography.Text>
                     </Tooltip>
                   </div>

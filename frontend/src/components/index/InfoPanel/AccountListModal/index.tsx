@@ -12,6 +12,7 @@ interface Props {
 
 export default function Index({ accounts, currAccountAddress, visible, onCancel, onConfirm }: Props) {
   const [names, setNames] = useState<Record<string, string>>({})
+  const [isScrolled, setIsScrolled] = useState<boolean>(false) // 进入页面后，列表显示在底部，需要先滚动到顶部再显示
 
   useEffect(() => {
     const names: Record<string, string> = {}
@@ -24,17 +25,26 @@ export default function Index({ accounts, currAccountAddress, visible, onCancel,
 
   return <Modal
     title="账户列表"
+    className="accounts-modal"
     width={480}
     destroyOnClose
     open={visible}
     onCancel={onCancel}
     onOk={() => onConfirm(names)}
     styles={{ body: { height: '60vh', overflow: 'auto' } }}
+    afterOpenChange={open => {
+      if (open) {
+        document.querySelector('.accounts-modal .ant-modal-body')?.scrollTo({ top: 0 })
+        setIsScrolled(true)
+      }
+    }}
+    afterClose={() => setIsScrolled(false)}
   >
     <List
       dataSource={accounts}
+      loading={!isScrolled}
       renderItem={(item) => (
-        <List.Item>
+        <List.Item style={{ visibility: isScrolled ? 'visible' : 'hidden' }}>
           <List.Item.Meta
             title={
               <Typography.Text style={{ marginLeft: 20 }} editable={{
@@ -49,7 +59,7 @@ export default function Index({ accounts, currAccountAddress, visible, onCancel,
                 },
               }}>
                 {currAccountAddress === item.address ?
-                  <Typography.Text type="secondary">[当前账户]&nbsp;</Typography.Text> :
+                  <Typography.Text type="secondary" style={{ fontWeight: 'normal' }}>[当前账户]&nbsp;</Typography.Text> :
                   null
                 }
                 {names[item.address]}

@@ -19,7 +19,7 @@ export const contractComponent: Record<string, ComponentType<any>> = {
   'SFT': dynamic(() => import('@/components/index/ContractSFT'))
 }
 
-export const getDescData = (data: string | number | undefined | null) => {
+export const getDescNode = (data: string | number | undefined | null) => {
   if (data === undefined || data === null || data === '') {
     return <Typography.Text type="secondary"> ? </Typography.Text>
   }
@@ -27,7 +27,7 @@ export const getDescData = (data: string | number | undefined | null) => {
   return <Typography.Text code>{data.toString()}</Typography.Text>
 }
 
-export const getAccountNameByAddress = (accounts: AccountData[], address: string) => {
+export const getAccountName = (accounts: AccountData[], address: string) => {
   const account = accounts.find(account => account.address === address)
 
   return !!account ? account.name : address

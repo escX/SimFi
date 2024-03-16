@@ -16,8 +16,6 @@ interface Props extends ContractFunctionConfig {
 export default function Index({ name, inputs, stateMutability, getDescription, accounts, onExecFunction, onHistoryRecord }: Props) {
   const [inputValues, setInputValues] = useState<InputValueData[]>([])
   const [outputValues, setOutputValues] = useState<any[]>([])
-  const [transactionResponse, setTransactionResponse] = useState<ContractTransactionResponse | null>(null)
-  const [transactionReceipt, setTransactionReceipt] = useState<ContractTransactionReceipt | null>(null)
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false)
 
   const handleValueChange = (index: number, value: InputValueData) => {
@@ -50,17 +48,13 @@ export default function Index({ name, inputs, stateMutability, getDescription, a
       }
 
       setOutputValues(outputs)
-      setTransactionResponse(txResponse)
-      setTransactionReceipt(txReceipt)
 
       onHistoryRecord({
         execTimestamp: new Date().getTime(),
         functionName: name,
-        description: {
-          inputs: inputValues,
-          outputs,
-          getDescription
-        },
+        inputs: inputValues,
+        outputs,
+        getDescription,
         transactionResponse: txResponse,
         transactionReceipt: txReceipt
       })
@@ -111,7 +105,7 @@ export default function Index({ name, inputs, stateMutability, getDescription, a
         {inputs.map(({ type, style }, index) => getParamNode(type, style, index))}
       </Space.Compact>
 
-      <div>
+      <div style={{ marginTop: 6 }}>
         {getDescription(inputValues, outputValues, accounts)}
       </div>
     </>
