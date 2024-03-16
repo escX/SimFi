@@ -31,39 +31,38 @@ export default function Index({ name, inputs, stateMutability, getDescription, a
     setConfirmLoading(true)
 
     onExecFunction(name, inputValues).then(({ response, receipt }) => {
-      const transactionData: {
-        transactionResponse: ContractTransactionResponse | null
-        transactionReceipt: ContractTransactionReceipt | null
-      } = {
-        transactionResponse: null,
-        transactionReceipt: null
-      }
+      let txResponse: ContractTransactionResponse | null = null
+      let txReceipt: ContractTransactionReceipt | null = null
+      let outputs: any[] = []
 
       if (response instanceof ContractTransactionResponse) {
-        setTransactionResponse(response)
-        transactionData.transactionResponse = response
+        txResponse = response
       } else {
         if (Object.prototype.toString.call(response) === '[object Proxy]') {
-          setOutputValues(response.toArray())
+          outputs = response.toArray()
         } else {
-          setOutputValues([response.toString()] ?? [])
+          outputs = [response.toString()] ?? []
         }
       }
 
       if (receipt instanceof ContractTransactionReceipt) {
-        setTransactionReceipt(receipt)
-        transactionData.transactionReceipt = receipt
+        txReceipt = receipt
       }
 
+      setOutputValues(outputs)
+      setTransactionResponse(txResponse)
+      setTransactionReceipt(txReceipt)
+
       onHistoryRecord({
-        timestamp: new Date().getTime(),
+        execTimestamp: new Date().getTime(),
         functionName: name,
         description: {
           inputs: inputValues,
-          outputs: outputValues,
-          getDescription: getDescription
+          outputs,
+          getDescription
         },
-        ...transactionData
+        transactionResponse: txResponse,
+        transactionReceipt: txReceipt
       })
     }).finally(() => {
       setConfirmLoading(false)

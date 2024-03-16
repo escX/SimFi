@@ -202,15 +202,17 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
                   setHistoryRecord(data => [...data, {
                     ...newData,
                     accountAddress: currAccountAddress!,
+                    contractAddress: currContractAddress!,
                     contractName: currContract!.name,
+                    contractTimestamp: currContract!.deployTimestamp
                   }])
                 }}
               /> :
               null
             }
           </Layout.Content>
-          <Layout.Sider width="300" className={styles.right_sider}>
-            <HistoryPanel />
+          <Layout.Sider width="420" className={styles.right_sider}>
+            <HistoryPanel historyRecord={historyRecord} accounts={accountList} contracts={contracts} />
           </Layout.Sider>
         </Layout>
       </Layout>

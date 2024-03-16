@@ -57,8 +57,10 @@ export interface ExecResult {
 
 export interface HistoryRecord {
   accountAddress: string
+  contractAddress: string
   contractName: string
-  timestamp: number
+  contractTimestamp: number
+  execTimestamp: number
   functionName: string
   description: {
     inputs: InputValueData[]
@@ -69,4 +71,4 @@ export interface HistoryRecord {
   transactionReceipt: ContractTransactionReceipt | null
 }
 
-export type HistoryRecordProvided = Omit<HistoryRecord, 'accountAddress' | 'contractName'>
+export type HistoryRecordProvided = Omit<HistoryRecord, 'accountAddress' | 'contractAddress' | 'contractName' | 'contractTimestamp'>
