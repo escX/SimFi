@@ -91,16 +91,23 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
 
         setContracts(contract => {
           return [
+            ...contract,
             {
               address: deployedAddress,
               name: artifact.contractName,
               deployTimestamp: new Date().getTime(),
               deployAccountAddress: currAccount.address,
               ref: contractRef
-            },
-            ...contract
+            }
           ]
         })
+
+        setTimeout(() => {
+          const scrollElement = document.querySelector('.deployed-list-panel .ant-card-body')
+          if (scrollElement) {
+            scrollElement.scrollTo({ top: scrollElement.scrollHeight })
+          }
+        }, 0)
 
         messageApi.open({
           type: 'success',
@@ -169,6 +176,23 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
     }
   }
 
+  const handleRecordHistory = (record: HistoryRecordProvided) => {
+    setHistoryRecord(data => [...data, {
+      ...record,
+      accountAddress: currAccountAddress!,
+      contractAddress: currContractAddress!,
+      contractName: currContract!.name,
+      contractTimestamp: currContract!.deployTimestamp
+    }])
+
+    setTimeout(() => {
+      const scrollElement = document.querySelector('.history-panel .ant-card-body')
+      if (scrollElement) {
+        scrollElement.scrollTo({ top: scrollElement.scrollHeight })
+      }
+    }, 0)
+  }
+
   return (
     <>
       <Layout className={styles.layout}>
@@ -187,7 +211,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
               onAccountNameChange={setAccountNameMap}
             />
             <DeployedListPanel
-              className={`${styles['deployed-list-panel']} ${styles['fixed-card-body']}`}
+              className={`${styles['deployed-list-panel']} ${styles['fixed-card-body']} deployed-list-panel`}
               contracts={contracts}
               currContractAddress={currContractAddress}
               accountNameMap={accountNameMap}
@@ -204,15 +228,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
                 <ContractComponent
                   accounts={accountList}
                   onExecFunction={handleExecFunction}
-                  onHistoryRecord={(newData: HistoryRecordProvided) => {
-                    setHistoryRecord(data => [...data, {
-                      ...newData,
-                      accountAddress: currAccountAddress!,
-                      contractAddress: currContractAddress!,
-                      contractName: currContract!.name,
-                      contractTimestamp: currContract!.deployTimestamp
-                    }])
-                  }}
+                  onHistoryRecord={handleRecordHistory}
                 /> :
                 <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
               }
@@ -223,7 +239,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
               historyRecord={historyRecord}
               accounts={accountList}
               contracts={contracts}
-              className={`${styles['history-panel']} ${styles['fixed-card-body']}`}
+              className={`${styles['history-panel']} ${styles['fixed-card-body']} history-panel`}
             />
           </Layout.Sider>
         </Layout>
