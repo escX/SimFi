@@ -2,6 +2,7 @@ import { ContractData } from "@/lib/const"
 import { Card, List, Popconfirm, Tooltip, Typography } from "antd"
 
 interface Props {
+  className: string
   contracts: ContractData[]
   currContractAddress: string | undefined
   accountNameMap: Record<string, string>
@@ -9,9 +10,9 @@ interface Props {
   onDelete: (address: string) => void
 }
 
-export default function Index({ contracts, currContractAddress, accountNameMap, onChangeCurrContract, onDelete }: Props) {
+export default function Index({ className, contracts, currContractAddress, accountNameMap, onChangeCurrContract, onDelete }: Props) {
   return (
-    <Card title="已部署合约">
+    <Card title="已部署合约" className={className}>
       <List
         dataSource={contracts}
         itemLayout="vertical"

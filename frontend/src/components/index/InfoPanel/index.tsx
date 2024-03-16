@@ -5,6 +5,7 @@ import { AccountData } from "./const"
 import AccountListModal from "./AccountListModal"
 
 interface Props {
+  className: string
   accounts: AccountData[]
   artifacts: Artifact[]
   currAccountAddress: string | undefined
@@ -13,7 +14,7 @@ interface Props {
   onAccountNameChange: (names: Record<string, string>) => void
 }
 
-export default function Index({ accounts, artifacts, currAccountAddress, onAccountChange, onDeploy, onAccountNameChange }: Props) {
+export default function Index({ className, accounts, artifacts, currAccountAddress, onAccountChange, onDeploy, onAccountNameChange }: Props) {
   const [currArtifact, setCurrArtifact] = useState<string>()
   const [accountListVisible, setAccountListVisible] = useState<boolean>(false)
   const [deployLoading, setDeployLoading] = useState<boolean>(false)
@@ -45,7 +46,7 @@ export default function Index({ accounts, artifacts, currAccountAddress, onAccou
 
   return (
     <>
-      <Card title="账户和部署">
+      <Card title="账户和部署" className={className}>
         <Form.Item label="当前账户" extra={
           <Typography.Link onClick={() => setAccountListVisible(true)}>账户列表，修改账户名称</Typography.Link>
         }>

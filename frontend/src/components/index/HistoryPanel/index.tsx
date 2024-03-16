@@ -7,12 +7,13 @@ import { useMemo, useState } from "react"
 import FilterModal from "./FilterModal"
 
 interface Props {
+  className: string
   historyRecord: HistoryRecord[]
   accounts: AccountData[]
   contracts: ContractData[]
 }
 
-export default function Index({ historyRecord, accounts, contracts }: Props) {
+export default function Index({ className, historyRecord, accounts, contracts }: Props) {
   const [filterData, setFilterData] = useState<HistoryFilterData>({
     accounts: [],
     contracts: [],
@@ -50,7 +51,7 @@ export default function Index({ historyRecord, accounts, contracts }: Props) {
 
   return (
     <>
-      <Card title={
+      <Card className={className} title={
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <div>执行合约方法历史</div>
           <Space style={{ fontWeight: 'normal' }}>

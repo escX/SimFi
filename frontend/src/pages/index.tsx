@@ -6,7 +6,7 @@ import { Card, Empty, Layout, Typography, message } from 'antd'
 import { Artifact, ContractData, HistoryRecord, HistoryRecordProvided } from '@/lib/const'
 import { contractComponent, getDefaultAccountNameMap } from '@/lib/utils'
 import { InputValueData } from '@/components/common/FuncExecution/const'
-import styles from "@/styles/index.module.css"
+import styles from "@/styles/index.module.scss"
 import ConnectModal from "../components/index/ConnectModal"
 import DeployedListPanel from '@/components/index/DeployedListPanel'
 import HistoryPanel from '@/components/index/HistoryPanel'
@@ -175,9 +175,10 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
         <Layout.Header className={styles.header}>
           <Typography.Text className={styles.title} strong>SimFi</Typography.Text>
         </Layout.Header>
-        <Layout>
-          <Layout.Sider width="480" className={styles.left_sider}>
+        <Layout className={styles.content}>
+          <Layout.Sider width="480" className={styles['left-sider']}>
             <InfoPanel
+              className={styles['info-panel']}
               accounts={accountList}
               artifacts={artifacts}
               currAccountAddress={currAccountAddress}
@@ -186,6 +187,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
               onAccountNameChange={setAccountNameMap}
             />
             <DeployedListPanel
+              className={`${styles['deployed-list-panel']} ${styles['fixed-card-body']}`}
               contracts={contracts}
               currContractAddress={currContractAddress}
               accountNameMap={accountNameMap}
@@ -193,8 +195,11 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
               onDelete={handleDeleteContract}
             />
           </Layout.Sider>
-          <Layout.Content>
-            <Card title={`${currContract ? currContract.name : ''}合约可执行方法`}>
+          <Layout.Content className={styles.main}>
+            <Card
+              title={`${currContract ? currContract.name : ''} 合约可执行方法`}
+              className={`${styles['contract-panel']} ${styles['fixed-card-body']}`}
+            >
               {ContractComponent ?
                 <ContractComponent
                   accounts={accountList}
@@ -213,8 +218,13 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
               }
             </Card>
           </Layout.Content>
-          <Layout.Sider width="420" className={styles.right_sider}>
-            <HistoryPanel historyRecord={historyRecord} accounts={accountList} contracts={contracts} />
+          <Layout.Sider width="420" className={styles['right-sider']}>
+            <HistoryPanel
+              historyRecord={historyRecord}
+              accounts={accountList}
+              contracts={contracts}
+              className={`${styles['history-panel']} ${styles['fixed-card-body']}`}
+            />
           </Layout.Sider>
         </Layout>
       </Layout>
