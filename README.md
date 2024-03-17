@@ -23,6 +23,9 @@
 3. `DebtToken`铸造后，只有在确认债权人后，才会在每期期限内，由债务人向债权人偿还承诺数量的`SFT`。若违约，将顺延分期，同时在此后每期中，按照每期违约金，增加债务人应偿还的`SFT`数量。
 4. `DebtToken`只能由债务人铸造，在确认债权人前，可以被债务人销毁；一旦确认了债权人，只能在债务人偿还完所有分期的`SFT`后，才会自动销毁。
 5. `DebtToken`的债务人不会变化，但可以通过交易，改变债权人。`DebtToken`可以和`SFT`和其他不同哈希的`DebtToken`进行交易。这一过程将在交易所合约`Exchange`中实现。
+> 注意：该合约为了使用可以在本地运行的`chinklink`，引入了`@chainlink/hardhat-chainlink`插件，这个插件在`window`系统运行需要`python`和`Visual Studio Community`，在其他平台也有相应的系统要求。
+>
+> 想了解更多，或者您在安装`@chainlink/hardhat-chainlink`的过程中出现任何问题，可以在[node-gyp](https://github.com/nodejs/node-gyp)寻求可能的解决方案。
 
 ## 前端项目
 前端项目可以通过可视化的方式，部署本项目中的智能合约，执行已部署智能合约的方法，并记录操作历史。

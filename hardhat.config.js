@@ -2,6 +2,7 @@ require("@nomicfoundation/hardhat-toolbox");
 require("@nomicfoundation/hardhat-ethers");
 require("@nomicfoundation/hardhat-chai-matchers");
 require("@nomicfoundation/hardhat-ignition-ethers");
+require("@chainlink/hardhat-chainlink");
 require("hardhat-gas-reporter");
 require("./tasks/write");
 require("dotenv").config();
