@@ -1,26 +1,9 @@
-//SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract DebT {
-    struct DebtProducer {
-        address debtor; // 债务人账户
-        uint256 amount; // 债务数量：由债务人创造，通过两种方式消费：1、债务人撤销未确认债权人的债务；2、自动清算已结清的债务
-        uint256 unconfirmedAmount; // 未确认债权的数量
-        uint256 instalPeriods; // 分期期数，每期固定为1分钟
-        uint256 instalPayment; // 每期每份债务应还款数量
-        uint256 instalPenalty; // 每期每份债务增加违约金
-    }
+import {IDebT} from "./interfaces/IDebT.sol";
 
-    struct DebtConsumer {
-        address creditor; // 债权人账户
-        uint256 holdAmount; // 债权人持有数量
-        bytes32 producerHash; // 债务人创建的债务的hash
-        uint256 beginTime; // 该笔债务首次确认债权人的时间，基于这个时间，确认每期截止时间
-        uint256 currentPeriod; // 当前期数，未确认债权时为0，首次确认债权人后为1，每期正常还款后增加1
-        uint256 breachTimes; // 违约次数，默认为0，每有一期未正常还款，增加1
-        uint256 lastUnpaid; // 上期未还清的数量，不包括违约金部分
-    }
-
+contract DebT is IDebT {
     modifier onlyOwner() {
         if (_owner != msg.sender) {
             revert();
@@ -28,15 +11,15 @@ contract DebT {
         _;
     }
 
-    modifier onlyDebtor(bytes32 _producerHash) {
-        if (debtProduced[_producerHash].debtor != msg.sender) {
+    modifier onlyDebtorHash(bytes32 _producerHash) {
+        if (_debtProduced[_producerHash].debtor != msg.sender) {
             revert();
         }
         _;
     }
 
-    modifier onlyCreditor(bytes32 _consumerHash) {
-        if (debtConsumed[_consumerHash].creditor != msg.sender) {
+    modifier onlyCreditorHash(bytes32 _consumerHash) {
+        if (_debtConsumed[_consumerHash].creditor != msg.sender) {
             revert();
         }
         _;
@@ -54,9 +37,9 @@ contract DebT {
     address private immutable _owner;
 
     // 债务人创建的债务信息
-    mapping(bytes32 _producerHash => DebtProducer) public debtProduced;
+    mapping(bytes32 _producerHash => DebtProducer) private _debtProduced;
     // 债权人持有债务的还款信息
-    mapping(bytes32 _consumerHash => DebtConsumer) public debtConsumed;
+    mapping(bytes32 _consumerHash => DebtConsumer) private _debtConsumed;
     // 债务人创建的所有债务
     mapping(address _debtor => mapping(bytes32 _producerHash => bool))
         public debtorHash;
@@ -74,6 +57,18 @@ contract DebT {
 
     constructor() {
         _owner = msg.sender;
+    }
+
+    function debtProduced(
+        bytes32 _producerHash
+    ) external view returns (DebtProducer memory) {
+        return _debtProduced[_producerHash];
+    }
+
+    function debtConsumed(
+        bytes32 _consumerHash
+    ) external view returns (DebtConsumer memory) {
+        return _debtConsumed[_consumerHash];
     }
 
     // 债务人创造债务
@@ -97,9 +92,9 @@ contract DebT {
             )
         );
 
-        DebtProducer memory _debt = debtProduced[_producerHash];
+        DebtProducer memory _debtProducer = _debtProduced[_producerHash];
 
-        if (_debt.amount == 0) {
+        if (_debtProducer.amount == 0) {
             _addProducerDebt(
                 DebtProducer({
                     debtor: msg.sender,
@@ -121,10 +116,10 @@ contract DebT {
     function revokeDebt(
         bytes32 _producerHash,
         uint256 _amount
-    ) external onlyDebtor(_producerHash) {
-        DebtProducer memory _debt = debtProduced[_producerHash];
+    ) external onlyDebtorHash(_producerHash) {
+        DebtProducer memory _debtProducer = _debtProduced[_producerHash];
 
-        if (_debt.unconfirmedAmount == 0) {
+        if (_debtProducer.unconfirmedAmount == 0) {
             revert();
         }
 
@@ -132,13 +127,13 @@ contract DebT {
             revert();
         }
 
-        if (_debt.unconfirmedAmount < _amount) {
+        if (_debtProducer.unconfirmedAmount < _amount) {
             revert();
         }
 
         // 若销毁全部，删除债务信息
         // 否则减少总量和未确认债权数量
-        if (_debt.amount == _amount) {
+        if (_debtProducer.amount == _amount) {
             _deleteProducerDebt(_producerHash, msg.sender);
         } else {
             _splitProducerDebt(_producerHash, _amount);
@@ -150,7 +145,7 @@ contract DebT {
         address _exchange,
         bytes32 _producerHash,
         uint256 _amount
-    ) external onlyExchange(_exchange) onlyDebtor(_producerHash) {
+    ) external onlyExchange(_exchange) onlyDebtorHash(_producerHash) {
         debtorAllowance[msg.sender][_exchange][_producerHash] = _amount;
     }
 
@@ -159,7 +154,7 @@ contract DebT {
         address _exchange,
         bytes32 _consumerHash,
         uint256 _amount
-    ) external onlyExchange(_exchange) onlyCreditor(_consumerHash) {
+    ) external onlyExchange(_exchange) onlyCreditorHash(_consumerHash) {
         creditorAllowance[msg.sender][_exchange][_consumerHash] = _amount;
     }
 
@@ -175,9 +170,9 @@ contract DebT {
         bytes32 _producerHash,
         uint256 _amount
     ) external onlyExchange(msg.sender) {
-        DebtProducer memory _debt = debtProduced[_producerHash];
+        DebtProducer memory _debtProducer = _debtProduced[_producerHash];
 
-        if (_debt.unconfirmedAmount == 0) {
+        if (_debtProducer.unconfirmedAmount == 0) {
             revert();
         }
 
@@ -185,22 +180,23 @@ contract DebT {
             revert();
         }
 
-        if (_debt.unconfirmedAmount < _amount) {
+        if (_debtProducer.unconfirmedAmount < _amount) {
             revert();
         }
 
-        uint256 allowance = debtorAllowance[_debt.debtor][msg.sender][
+        uint256 _allowance = debtorAllowance[_debtProducer.debtor][msg.sender][
             _producerHash
         ];
 
-        if (allowance < _amount) {
+        if (_allowance < _amount) {
             revert();
         }
 
         // 债权未确认的数量减少
-        debtProduced[_producerHash].unconfirmedAmount =
-            _debt.unconfirmedAmount -
-            _amount;
+        _setUnconfirmedAmount(
+            _producerHash,
+            _debtProducer.unconfirmedAmount - _amount
+        );
 
         uint256 _beginTime = block.timestamp;
         uint256 _currentPeriod = 1; // 当前期数
@@ -220,9 +216,9 @@ contract DebT {
 
         // 若存在相同hash的债务，合并
         // 若不存在相同hash的债务，创建并添加到债权人的债务列表
-        uint256 _holdAmount = debtConsumed[_consumerHash].holdAmount;
+        DebtConsumer memory _debtConsumer = _debtConsumed[_consumerHash];
 
-        if (_holdAmount == 0) {
+        if (_debtConsumer.holdAmount == 0) {
             _addConsumerDebt(
                 DebtConsumer({
                     creditor: _creditor,
@@ -237,7 +233,6 @@ contract DebT {
                 _creditor
             );
         } else {
-            debtConsumed[_consumerHash].holdAmount = _holdAmount + _amount;
             _mergeConsumerDebt(_consumerHash, _amount, 0);
         }
     }
@@ -248,9 +243,9 @@ contract DebT {
         bytes32 _consumerHash,
         uint256 _amount
     ) external onlyExchange(msg.sender) {
-        DebtConsumer memory _debt = debtConsumed[_consumerHash];
+        DebtConsumer memory _debtConsumer = _debtConsumed[_consumerHash];
 
-        if (_debt.holdAmount == 0) {
+        if (_debtConsumer.holdAmount == 0) {
             revert();
         }
 
@@ -258,54 +253,57 @@ contract DebT {
             revert();
         }
 
-        if (_debt.holdAmount < _amount) {
+        if (_debtConsumer.holdAmount < _amount) {
             revert();
         }
 
-        uint256 allowance = creditorAllowance[_debt.creditor][msg.sender][
-            _consumerHash
-        ];
+        uint256 _allowance = creditorAllowance[_debtConsumer.creditor][
+            msg.sender
+        ][_consumerHash];
 
-        if (allowance < _amount) {
+        if (_allowance < _amount) {
             revert();
         }
 
         // 原债权人持有数量减少
         // 若债务全部转移，删除原债权人持有的债务信息
-        if (_debt.holdAmount == _amount) {
-            _deleteConsumerDebt(_consumerHash, _debt.creditor);
+        if (_debtConsumer.holdAmount == _amount) {
+            _deleteConsumerDebt(_consumerHash, _debtConsumer.creditor);
         } else {
             _splitConsumerDebt(
                 _consumerHash,
                 _amount,
-                _debt.lastUnpaid *
-                    ((_debt.holdAmount - _amount) / _debt.holdAmount)
+                _debtConsumer.lastUnpaid *
+                    ((_debtConsumer.holdAmount - _amount) /
+                        _debtConsumer.holdAmount)
             );
         }
 
         // 生成新的hash，用于对还款信息和债权人的索引，相同hash的债务可以进行合并
         bytes32 _newConsumerHash = keccak256(
             abi.encodePacked(
-                _debt.producerHash,
-                _debt.beginTime,
-                _debt.currentPeriod,
-                _debt.breachTimes,
+                _debtConsumer.producerHash,
+                _debtConsumer.beginTime,
+                _debtConsumer.currentPeriod,
+                _debtConsumer.breachTimes,
                 _creditor
             )
         );
 
         // 若存在相同hash的债务，合并债务持有量和未还清的数量
         // 若不存在相同hash的债务，创建并添加到债权人的债务列表
-        if (debtConsumed[_newConsumerHash].holdAmount == 0) {
+        DebtConsumer memory _debtConsumerNew = _debtConsumed[_newConsumerHash];
+
+        if (_debtConsumerNew.holdAmount == 0) {
             _addConsumerDebt(
                 DebtConsumer({
                     creditor: _creditor,
                     holdAmount: _amount,
-                    producerHash: _debt.producerHash,
-                    beginTime: _debt.beginTime,
-                    currentPeriod: _debt.currentPeriod,
-                    breachTimes: _debt.breachTimes,
-                    lastUnpaid: _debt.breachTimes
+                    producerHash: _debtConsumer.producerHash,
+                    beginTime: _debtConsumer.beginTime,
+                    currentPeriod: _debtConsumer.currentPeriod,
+                    breachTimes: _debtConsumer.breachTimes,
+                    lastUnpaid: _debtConsumer.lastUnpaid
                 }),
                 _newConsumerHash,
                 _creditor
@@ -314,7 +312,7 @@ contract DebT {
             _mergeConsumerDebt(
                 _newConsumerHash,
                 _amount,
-                _debt.lastUnpaid * (_amount / _debt.holdAmount)
+                _debtConsumer.lastUnpaid * (_amount / _debtConsumer.holdAmount)
             );
         }
     }
@@ -329,75 +327,95 @@ contract DebT {
         delete allowedExchanges[_exchange];
     }
 
+    // 从债务人创造的债务中分离出一部分份额
     function _splitProducerDebt(
         bytes32 _producerHash,
         uint256 _amount
     ) private {
-        DebtProducer storage s_debt = debtProduced[_producerHash];
-        s_debt.amount = s_debt.amount - _amount;
-        s_debt.unconfirmedAmount = s_debt.unconfirmedAmount - _amount;
+        DebtProducer storage s_debtProducer = _debtProduced[_producerHash];
+        s_debtProducer.amount = s_debtProducer.amount - _amount;
+        s_debtProducer.unconfirmedAmount =
+            s_debtProducer.unconfirmedAmount -
+            _amount;
     }
 
+    // 与债务人创造的债务进行合并
     function _mergeProducerDebt(
         bytes32 _producerHash,
         uint256 _amount
     ) private {
-        DebtProducer storage s_debt = debtProduced[_producerHash];
-        s_debt.amount = s_debt.amount + _amount;
-        s_debt.unconfirmedAmount = s_debt.unconfirmedAmount + _amount;
+        DebtProducer storage s_debtProducer = _debtProduced[_producerHash];
+        s_debtProducer.amount = s_debtProducer.amount + _amount;
+        s_debtProducer.unconfirmedAmount =
+            s_debtProducer.unconfirmedAmount +
+            _amount;
     }
 
+    // 债务人创造债务
     function _addProducerDebt(
         DebtProducer memory _debt,
         bytes32 _producerHash,
         address _debtor
     ) private {
-        debtProduced[_producerHash] = _debt;
+        _debtProduced[_producerHash] = _debt;
         debtorHash[_debtor][_producerHash] = true;
     }
 
+    // 债务人删除债务
     function _deleteProducerDebt(
         bytes32 _producerHash,
         address _debtor
     ) private {
-        delete debtProduced[_producerHash];
+        delete _debtProduced[_producerHash];
         delete debtorHash[_debtor][_producerHash];
     }
 
+    // 债务人设置未确认的份额
+    function _setUnconfirmedAmount(
+        bytes32 _producerHash,
+        uint256 _unconfirmedAmount
+    ) private {
+        _debtProduced[_producerHash].unconfirmedAmount = _unconfirmedAmount;
+    }
+
+    // 从债权人持有债务中分离出一些份额
     function _splitConsumerDebt(
         bytes32 _consumerHash,
         uint256 _amount,
         uint256 _lastUnpaid
     ) private {
-        DebtConsumer storage s_debt = debtConsumed[_consumerHash];
-        s_debt.holdAmount = s_debt.holdAmount - _amount;
-        s_debt.lastUnpaid = s_debt.lastUnpaid - _lastUnpaid;
+        DebtConsumer storage s_debtConsumer = _debtConsumed[_consumerHash];
+        s_debtConsumer.holdAmount = s_debtConsumer.holdAmount - _amount;
+        s_debtConsumer.lastUnpaid = s_debtConsumer.lastUnpaid - _lastUnpaid;
     }
 
+    // 与债权人已有债务进行合并
     function _mergeConsumerDebt(
         bytes32 _consumerHash,
         uint256 _amount,
         uint256 _lastUnpaid
     ) private {
-        DebtConsumer storage s_debt = debtConsumed[_consumerHash];
-        s_debt.holdAmount = s_debt.holdAmount + _amount;
-        s_debt.lastUnpaid = s_debt.lastUnpaid + _lastUnpaid;
+        DebtConsumer storage s_debtConsumer = _debtConsumed[_consumerHash];
+        s_debtConsumer.holdAmount = s_debtConsumer.holdAmount + _amount;
+        s_debtConsumer.lastUnpaid = s_debtConsumer.lastUnpaid + _lastUnpaid;
     }
 
+    // 新增债权人持有债务
     function _addConsumerDebt(
         DebtConsumer memory _debt,
         bytes32 _consumerHash,
         address _creditor
     ) private {
-        debtConsumed[_consumerHash] = _debt;
+        _debtConsumed[_consumerHash] = _debt;
         creditorHash[_creditor][_consumerHash] = true;
     }
 
+    // 删除债权人持有债务
     function _deleteConsumerDebt(
         bytes32 _consumerHash,
         address _creditor
     ) private {
-        delete debtConsumed[_consumerHash];
+        delete _debtConsumed[_consumerHash];
         delete creditorHash[_creditor][_consumerHash];
     }
 }
