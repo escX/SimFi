@@ -1,8 +1,8 @@
-require("@nomicfoundation/hardhat-toolbox");
+require("@chainlink/hardhat-chainlink"); // 该依赖放在最前面，否则可能会影响测试运行
 require("@nomicfoundation/hardhat-ethers");
+require("@nomicfoundation/hardhat-toolbox");
 require("@nomicfoundation/hardhat-chai-matchers");
 require("@nomicfoundation/hardhat-ignition-ethers");
-require("@chainlink/hardhat-chainlink");
 require("hardhat-gas-reporter");
 require("./tasks/write");
 require("dotenv").config();

@@ -29,7 +29,6 @@
 > 注意：该合约为了使用可以在本地运行的`chinklink`，引入了`@chainlink/hardhat-chainlink`插件，这个插件在`window`系统中运行需要`python`和`Visual Studio Community`。
 >
 > 想了解更多，或者您在安装`@chainlink/hardhat-chainlink`的过程中出现有关`gyp`的报错，可以在[node-gyp](https://github.com/nodejs/node-gyp)中寻求可能的解决方案。
-> `@chainlink/hardhat-chainlink`插件会导致测试不能正常运行，可以尝试在`hardhat.config.js`中注释掉`require("@chainlink/hardhat-chainlink")`，以便测试运行。
 
 ## 前端项目
 前端项目可以通过可视化的方式，部署本项目中的智能合约，执行已部署智能合约的方法，并记录操作历史。
