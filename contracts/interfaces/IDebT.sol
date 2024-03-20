@@ -141,9 +141,9 @@ interface IDebT {
         uint256 amount
     ) external;
 
-    // 增加授权的交易所
-    function addExchange(address exchange) external;
+    // 交易所认证
+    function authorizeExchange(address exchange) external;
 
-    // 移除授权的交易所
-    function removeExchange(address exchange) external;
+    // 取消交易所认证
+    function unauthorizeExchange(address exchange) external;
 }

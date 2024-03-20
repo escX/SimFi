@@ -333,12 +333,12 @@ contract DebT is IDebT, IDebTErrors {
         );
     }
 
-    function addExchange(address _exchange) external onlyOwner {
+    function authorizeExchange(address _exchange) external onlyOwner {
         allowedExchanges[_exchange] = true;
         emit Authorize(_exchange);
     }
 
-    function removeExchange(address _exchange) external onlyOwner {
+    function unauthorizeExchange(address _exchange) external onlyOwner {
         delete allowedExchanges[_exchange];
         emit Unauthorize(_exchange);
     }
