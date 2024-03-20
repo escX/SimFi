@@ -3,8 +3,11 @@ pragma solidity ^0.8.0;
 
 import {IDebT} from "./interfaces/IDebT.sol";
 import {IDebTErrors} from "./interfaces/IDebTErrors.sol";
+import {ArrayLib} from "./utils/ArrayLib.sol";
 
 contract DebT is IDebT, IDebTErrors {
+    using ArrayLib for ArrayLib.Bytes32ArrayMap;
+
     modifier onlyOwner() {
         if (_owner != msg.sender) {
             revert IllegalCaller(msg.sender, _owner);
@@ -43,10 +46,9 @@ contract DebT is IDebT, IDebTErrors {
 
     mapping(bytes32 _producerHash => DebtProducer) private _debtProduced;
     mapping(bytes32 _consumerHash => DebtConsumer) private _debtConsumed;
-    mapping(address _debtor => mapping(bytes32 _producerHash => bool))
-        public debtorHash;
-    mapping(address _creditor => mapping(bytes32 _consumerHash => bool))
-        public creditorHash;
+    mapping(address _debtor => ArrayLib.Bytes32ArrayMap) private _debtorHash;
+    mapping(address _creditor => ArrayLib.Bytes32ArrayMap)
+        private _creditorHash;
     mapping(address _debtor => mapping(address _exchange => mapping(bytes32 _producerHash => uint256)))
         public debtorAllowance;
     mapping(address _creditor => mapping(address _exchange => mapping(bytes32 _consumerHash => uint256)))
@@ -67,6 +69,18 @@ contract DebT is IDebT, IDebTErrors {
         bytes32 _consumerHash
     ) external view returns (DebtConsumer memory) {
         return _debtConsumed[_consumerHash];
+    }
+
+    function debtorHash(
+        address _debtor
+    ) external view returns (bytes32[] memory) {
+        return _debtorHash[_debtor].keys;
+    }
+
+    function creditorHash(
+        address _creditor
+    ) external view returns (bytes32[] memory) {
+        return _creditorHash[_creditor].keys;
     }
 
     function createDebt(
@@ -360,7 +374,7 @@ contract DebT is IDebT, IDebTErrors {
         address _debtor
     ) private {
         _debtProduced[_producerHash] = _debt;
-        debtorHash[_debtor][_producerHash] = true;
+        _debtorHash[_debtor].push(_producerHash);
     }
 
     // 债务人删除债务
@@ -369,7 +383,7 @@ contract DebT is IDebT, IDebTErrors {
         address _debtor
     ) private {
         delete _debtProduced[_producerHash];
-        delete debtorHash[_debtor][_producerHash];
+        _debtorHash[_debtor].remove(_producerHash);
     }
 
     // 债务人设置未确认的份额
@@ -409,7 +423,7 @@ contract DebT is IDebT, IDebTErrors {
         address _creditor
     ) private {
         _debtConsumed[_consumerHash] = _debt;
-        creditorHash[_creditor][_consumerHash] = true;
+        _creditorHash[_creditor].push(_consumerHash);
     }
 
     // 删除债权人持有债务
@@ -418,6 +432,6 @@ contract DebT is IDebT, IDebTErrors {
         address _creditor
     ) private {
         delete _debtConsumed[_consumerHash];
-        delete creditorHash[_creditor][_consumerHash];
+        _creditorHash[_creditor].remove(_consumerHash);
     }
 }

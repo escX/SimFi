@@ -15,6 +15,10 @@ async function createDebtFixture() {
   const instalPayment = 120; // 每期还款金额
   const instalPenalty = 12;  // 每期逾期罚金
 
+  DebTContract.once("Produce", (...data) => {
+    console.log(data);
+  });
+
   await DebTContract.connect(debtor).createDebt(amount, instalPeriods, instalPayment, instalPenalty);
 }
 
@@ -36,8 +40,8 @@ async function transferCreditorFixture() {
 
 describe("DebT Contract", function () {
   describe("createDebt", function () {
-    it ("", async function () {
-
+    it ("test", async function () {
+      await loadFixture(createDebtFixture);
     });
   });
 

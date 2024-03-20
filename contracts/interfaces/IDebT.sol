@@ -71,15 +71,13 @@ interface IDebT {
 
     // 债务人创建的所有债务
     function debtorHash(
-        address debtor,
-        bytes32 hash
-    ) external view returns (bool);
+        address debtor
+    ) external view returns (bytes32[] memory);
 
     // 债权人持有的所有债务
     function creditorHash(
-        address creditor,
-        bytes32 hash
-    ) external view returns (bool);
+        address creditor
+    ) external view returns (bytes32[] memory);
 
     // 债务人授权交易所，对于某笔债务，可用于确认债权的债务额度
     function debtorAllowance(
