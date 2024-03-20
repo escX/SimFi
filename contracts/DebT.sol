@@ -2,32 +2,37 @@
 pragma solidity ^0.8.0;
 
 import {IDebT} from "./interfaces/IDebT.sol";
+import {IDebTErrors} from "./interfaces/IDebTErrors.sol";
 
-contract DebT is IDebT {
+contract DebT is IDebT, IDebTErrors {
     modifier onlyOwner() {
         if (_owner != msg.sender) {
-            revert();
+            revert IllegalCaller(msg.sender, _owner);
         }
         _;
     }
 
     modifier onlyDebtorHash(bytes32 _producerHash) {
-        if (_debtProduced[_producerHash].debtor != msg.sender) {
-            revert();
+        address _debtor = _debtProduced[_producerHash].debtor;
+
+        if (_debtor != msg.sender) {
+            revert IllegalCaller(msg.sender, _debtor);
         }
         _;
     }
 
     modifier onlyCreditorHash(bytes32 _consumerHash) {
-        if (_debtConsumed[_consumerHash].creditor != msg.sender) {
-            revert();
+        address _creditor = _debtConsumed[_consumerHash].creditor;
+
+        if (_creditor != msg.sender) {
+            revert IllegalCaller(msg.sender, _creditor);
         }
         _;
     }
 
     modifier onlyExchange(address _exchange) {
         if (allowedExchanges[_exchange] == false) {
-            revert();
+            revert IllegalExchange(_exchange);
         }
         _;
     }
@@ -36,23 +41,16 @@ contract DebT is IDebT {
     string public constant symbol = "DebT";
     address private immutable _owner;
 
-    // 债务人创建的债务信息
     mapping(bytes32 _producerHash => DebtProducer) private _debtProduced;
-    // 债权人持有债务的还款信息
     mapping(bytes32 _consumerHash => DebtConsumer) private _debtConsumed;
-    // 债务人创建的所有债务
     mapping(address _debtor => mapping(bytes32 _producerHash => bool))
         public debtorHash;
-    // 债权人持有的所有债务
     mapping(address _creditor => mapping(bytes32 _consumerHash => bool))
         public creditorHash;
-    // 债务人授权交易所，对于某笔债务，可用于确认债权的债务额度
     mapping(address _debtor => mapping(address _exchange => mapping(bytes32 _producerHash => uint256)))
         public debtorAllowance;
-    // 债权人授权交易所，对于某笔债务，可用于转移债权的债务额度
     mapping(address _creditor => mapping(address _exchange => mapping(bytes32 _consumerHash => uint256)))
         public creditorAllowance;
-    // 合约授权的交易所
     mapping(address _exchange => bool) public allowedExchanges;
 
     constructor() {
@@ -71,7 +69,6 @@ contract DebT is IDebT {
         return _debtConsumed[_consumerHash];
     }
 
-    // 债务人创造债务
     function createDebt(
         uint256 _amount,
         uint256 _instalPeriods,
@@ -79,7 +76,7 @@ contract DebT is IDebT {
         uint256 _instalPenalty
     ) external {
         if (_amount == 0) {
-            revert();
+            revert IllegalArgumentValue(_amount);
         }
 
         bytes32 _producerHash = keccak256(
@@ -110,25 +107,29 @@ contract DebT is IDebT {
         } else {
             _mergeProducerDebt(_producerHash, _amount);
         }
+
+        emit Produce(
+            msg.sender,
+            _producerHash,
+            _amount,
+            _instalPeriods,
+            _instalPayment,
+            _instalPenalty
+        );
     }
 
-    // 债务人撤销未确认债权的债务
     function revokeDebt(
         bytes32 _producerHash,
         uint256 _amount
     ) external onlyDebtorHash(_producerHash) {
         DebtProducer memory _debtProducer = _debtProduced[_producerHash];
 
-        if (_debtProducer.unconfirmedAmount == 0) {
-            revert();
-        }
-
         if (_amount == 0) {
-            revert();
+            revert IllegalArgumentValue(_amount);
         }
 
         if (_debtProducer.unconfirmedAmount < _amount) {
-            revert();
+            revert InsufficientShares(_debtProducer.unconfirmedAmount, _amount);
         }
 
         // 若销毁全部，删除债务信息
@@ -138,33 +139,34 @@ contract DebT is IDebT {
         } else {
             _splitProducerDebt(_producerHash, _amount);
         }
+
+        emit Revoke(_producerHash, _amount);
     }
 
-    // 债务人授权第三方交易所对于某笔债务的额度
     function debtorApprove(
         address _exchange,
         bytes32 _producerHash,
         uint256 _amount
     ) external onlyExchange(_exchange) onlyDebtorHash(_producerHash) {
         debtorAllowance[msg.sender][_exchange][_producerHash] = _amount;
+
+        emit Approve(msg.sender, _exchange, _producerHash, _amount);
     }
 
-    // 债权人授权第三方交易所对于某笔债务的额度
     function creditorApprove(
         address _exchange,
         bytes32 _consumerHash,
         uint256 _amount
     ) external onlyExchange(_exchange) onlyCreditorHash(_consumerHash) {
         creditorAllowance[msg.sender][_exchange][_consumerHash] = _amount;
+
+        emit Approve(msg.sender, _exchange, _consumerHash, _amount);
     }
 
-    // 系统清算已结清的债务，由交易所调用
     function settleDebt() external onlyExchange(msg.sender) {}
 
-    // 系统在还款日转账给债权人，由交易所调用
     function transferToken() external onlyExchange(msg.sender) {}
 
-    // 从债务人账户购入债务，即债权的确认，由交易所调用
     function confirmCreditor(
         address _creditor,
         bytes32 _producerHash,
@@ -172,16 +174,12 @@ contract DebT is IDebT {
     ) external onlyExchange(msg.sender) {
         DebtProducer memory _debtProducer = _debtProduced[_producerHash];
 
-        if (_debtProducer.unconfirmedAmount == 0) {
-            revert();
-        }
-
         if (_amount == 0) {
-            revert();
+            revert IllegalArgumentValue(_amount);
         }
 
         if (_debtProducer.unconfirmedAmount < _amount) {
-            revert();
+            revert InsufficientShares(_debtProducer.unconfirmedAmount, _amount);
         }
 
         uint256 _allowance = debtorAllowance[_debtProducer.debtor][msg.sender][
@@ -189,7 +187,7 @@ contract DebT is IDebT {
         ];
 
         if (_allowance < _amount) {
-            revert();
+            revert InsufficientAuthorizedShares(_allowance, _amount);
         }
 
         // 债权未确认的数量减少
@@ -235,9 +233,10 @@ contract DebT is IDebT {
         } else {
             _mergeConsumerDebt(_consumerHash, _amount, 0);
         }
+
+        emit Consume(_debtProducer.debtor, _creditor, _consumerHash, _amount);
     }
 
-    // 从债权人账户购入债务，即债权的转移，由交易所调用
     function transferCreditor(
         address _creditor,
         bytes32 _consumerHash,
@@ -245,16 +244,12 @@ contract DebT is IDebT {
     ) external onlyExchange(msg.sender) {
         DebtConsumer memory _debtConsumer = _debtConsumed[_consumerHash];
 
-        if (_debtConsumer.holdAmount == 0) {
-            revert();
-        }
-
         if (_amount == 0) {
-            revert();
+            revert IllegalArgumentValue(_amount);
         }
 
         if (_debtConsumer.holdAmount < _amount) {
-            revert();
+            revert InsufficientShares(_debtConsumer.holdAmount, _amount);
         }
 
         uint256 _allowance = creditorAllowance[_debtConsumer.creditor][
@@ -262,7 +257,7 @@ contract DebT is IDebT {
         ][_consumerHash];
 
         if (_allowance < _amount) {
-            revert();
+            revert InsufficientAuthorizedShares(_allowance, _amount);
         }
 
         // 原债权人持有数量减少
@@ -315,16 +310,23 @@ contract DebT is IDebT {
                 _debtConsumer.lastUnpaid * (_amount / _debtConsumer.holdAmount)
             );
         }
+
+        emit Consume(
+            _debtConsumed[_consumerHash].creditor,
+            _creditor,
+            _newConsumerHash,
+            _amount
+        );
     }
 
-    // 增加授权的交易所
     function addExchange(address _exchange) external onlyOwner {
         allowedExchanges[_exchange] = true;
+        emit Authorize(_exchange);
     }
 
-    // 移除授权的交易所
     function removeExchange(address _exchange) external onlyOwner {
         delete allowedExchanges[_exchange];
+        emit Unauthorize(_exchange);
     }
 
     // 从债务人创造的债务中分离出一部分份额
