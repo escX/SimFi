@@ -185,7 +185,7 @@ contract DebT is IDebT, IDebTErrors {
         address _creditor,
         bytes32 _producerHash,
         uint256 _amount
-    ) external onlyExchange(msg.sender) {
+    ) external {
         DebtProducer memory _debtProducer = _debtProduced[_producerHash];
 
         if (_amount == 0) {
@@ -255,7 +255,7 @@ contract DebT is IDebT, IDebTErrors {
         address _creditor,
         bytes32 _consumerHash,
         uint256 _amount
-    ) external onlyExchange(msg.sender) {
+    ) external {
         DebtConsumer memory _debtConsumer = _debtConsumed[_consumerHash];
 
         if (_amount == 0) {
