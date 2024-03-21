@@ -210,6 +210,14 @@ contract DebT is IDebT, IDebTErrors {
             _debtProducer.unconfirmedAmount - _amount
         );
 
+        // 扣减额度
+        _deductDebtorAllowance(
+            _debtProducer.debtor,
+            msg.sender,
+            _producerHash,
+            _amount
+        );
+
         uint256 _beginTime = block.timestamp;
         uint256 _currentPeriod = 1; // 当前期数
         uint256 _breachTimes = 0; // 违约次数
@@ -325,8 +333,16 @@ contract DebT is IDebT, IDebTErrors {
             );
         }
 
+        // 扣减额度
+        _deductCreditorAllowance(
+            _debtConsumer.creditor,
+            msg.sender,
+            _consumerHash,
+            _amount
+        );
+
         emit Consume(
-            _debtConsumed[_consumerHash].creditor,
+            _debtConsumer.creditor,
             _creditor,
             _newConsumerHash,
             _amount
@@ -433,5 +449,29 @@ contract DebT is IDebT, IDebTErrors {
     ) private {
         delete _debtConsumed[_consumerHash];
         _creditorHash[_creditor].remove(_consumerHash);
+    }
+
+    // 扣除债务人授权额度
+    function _deductDebtorAllowance(
+        address debtor,
+        address exchange,
+        bytes32 hash,
+        uint256 amount
+    ) private {
+        debtorAllowance[debtor][exchange][hash] =
+            debtorAllowance[debtor][exchange][hash] -
+            amount;
+    }
+
+    // 扣除债权人授权额度
+    function _deductCreditorAllowance(
+        address creditor,
+        address exchange,
+        bytes32 hash,
+        uint256 amount
+    ) private {
+        creditorAllowance[creditor][exchange][hash] =
+            creditorAllowance[creditor][exchange][hash] -
+            amount;
     }
 }

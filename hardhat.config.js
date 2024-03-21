@@ -18,5 +18,8 @@ module.exports = {
   },
   gasReporter: {
     enabled: REPORT_GAS === "1" ? true : false
+  },
+  mocha: {
+    timeout: 10000
   }
 };

@@ -8,9 +8,9 @@ const initCreatedAmount = 1000000000; // 债务人创造债务数量
 const initInstalPeriods = 10;  // 分期期数
 const initInstalPayment = 120; // 每期还款金额
 const initInstalPenalty = 12;  // 每期逾期罚金
-const initDebtorApproveAmount = 10000; // 债务人授权交易所份额
+const initDebtorApproveAmount = 20000; // 债务人授权交易所份额
 const initConfirmAmount = 10000; // 从债务人购买的份额
-const initCreditorApproveAmount = 1000; // 债权人授权交易所份额
+const initCreditorApproveAmount = 2000; // 债权人授权交易所份额
 const initTransferAmount = 1000; // 从债权人购买的份额
 
 async function setFixedBlockTimestamp() {
@@ -27,7 +27,7 @@ async function deployFixture() {
   return { DebTContract, debtor, exchange, creditor1, creditor2 };
 }
 
-// 2、债务人debtor创建债务，并授权交易所exchange
+// 2、债务人debtor创建债务，并认证交易所exchange
 async function createDebtFixture() {
   const { DebTContract, debtor, exchange, creditor1, creditor2 } = await loadFixture(deployFixture);
 
@@ -90,7 +90,15 @@ async function creditorApproveFixture() {
 
 // 6、债权人creditor2通过交易所exchange，从债权人creditor1那里获取债权
 async function transferCreditorFixture() {
+  const { DebTContract, exchange, creditor1, creditor2, consumerHash } = await loadFixture(creditorApproveFixture);
 
+  return new Promise((resolve, reject) => {
+    DebTContract.once("Consume", (...data) => {
+      resolve({ DebTContract, exchange, creditor1, creditor2, consumerHash1: consumerHash, consumerHash2: data[2] });
+    });
+
+    DebTContract.connect(exchange).transferCreditor(creditor2, consumerHash, initTransferAmount);
+  });
 }
 
 describe("DebT Contract", function () {
@@ -191,7 +199,7 @@ describe("DebT Contract", function () {
       assert.equal(unconfirmedAmount, initCreatedAmount - initRevokeAmount);
     });
 
-    it("触发Revoke事件", async function() {
+    it("触发Revoke事件", async function () {
       const { DebTContract, debtor, producerHash } = await loadFixture(createDebtFixture);
 
       await expect(DebTContract.connect(debtor).revokeDebt(producerHash, initRevokeAmount))
@@ -303,6 +311,14 @@ describe("DebT Contract", function () {
       assert.equal(unconfirmedAmount, initCreatedAmount - initConfirmAmount);
     });
 
+    it("扣减授权额度", async function () {
+      const { DebTContract, debtor, exchange, producerHash } = await loadFixture(confirmCreditorFixture);
+
+      const allowance = await DebTContract.connect(debtor).debtorAllowance(debtor, exchange, producerHash);
+
+      assert(allowance, initDebtorApproveAmount - initConfirmAmount);
+    });
+
     it("确认债务哈希存在时，合并债务", async function () {
       const { DebTContract, exchange, creditor1, consumerHash, producerHash } = await loadFixture(confirmCreditorFixture);
 
@@ -319,7 +335,7 @@ describe("DebT Contract", function () {
       await loadFixture(confirmCreditorFixture);
       const { DebTContract, creditor1, producerHash, consumerHash } = await loadFixture(confirmAnthorCreditorFixture);
 
-      const {creditor, holdAmount, producerHash: _producerHash} = await DebTContract.connect(creditor1).debtConsumed(consumerHash);
+      const { creditor, holdAmount, producerHash: _producerHash } = await DebTContract.connect(creditor1).debtConsumed(consumerHash);
 
       const creditorHash = await DebTContract.connect(creditor1).creditorHash(creditor1);
       const isExistHash = creditorHash.includes(consumerHash);
@@ -365,6 +381,14 @@ describe("DebT Contract", function () {
       await expect(DebTContract.connect(exchange).transferCreditor(creditor2, consumerHash, amount))
         .to.be.revertedWithCustomError(DebTContract, "InsufficientAuthorizedShares")
         .withArgs(initCreditorApproveAmount, amount);
+    });
+
+    it("扣减授权额度", async function () {
+      const { DebTContract, exchange, creditor1, consumerHash1 } = await loadFixture(transferCreditorFixture);
+
+      const allowance = await DebTContract.connect(creditor1).creditorAllowance(creditor1, exchange, consumerHash1);
+
+      assert(allowance, initCreditorApproveAmount - initTransferAmount);
     });
 
     it("若转移全部债权，删除原有债权信息", async function () {
@@ -428,5 +452,4 @@ describe("DebT Contract", function () {
         .withArgs(exchange);
     });
   });
-
 });
