@@ -13,9 +13,9 @@ interface IDebT {
 
     struct DebtConsumer {
         address creditor; // 债权人账户
-        uint256 holdAmount; // 债权人持有数量
+        uint256 amount; // 债权人持有数量
         bytes32 producerHash; // 债务人创建的债务的hash
-        uint256 beginTime; // 该笔债务首次确认债权人的时间，基于这个时间，确认每期截止时间
+        uint256 confirmTime; // 该笔债务首次确认债权人的时间，基于这个时间，确认每期截止时间
         uint256 currentPeriod; // 当前期数，未确认债权时为0，首次确认债权人后为1，每期正常还款后增加1
         uint256 breachTimes; // 违约次数，默认为0，每有一期未正常还款，增加1
         uint256 lastUnpaid; // 上期未还清的数量，不包括违约金部分

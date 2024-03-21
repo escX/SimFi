@@ -325,9 +325,9 @@ describe("DebT Contract", function () {
       await setFixedBlockTimestamp();
       await DebTContract.connect(exchange).confirmCreditor(creditor1, producerHash, initConfirmAmount);
 
-      const { holdAmount, lastUnpaid } = await DebTContract.connect(exchange).debtConsumed(consumerHash);
+      const { amount, lastUnpaid } = await DebTContract.connect(exchange).debtConsumed(consumerHash);
 
-      assert.equal(holdAmount, initConfirmAmount * 2);
+      assert.equal(amount, initConfirmAmount * 2);
       assert.equal(lastUnpaid, 0);
     });
 
@@ -335,13 +335,13 @@ describe("DebT Contract", function () {
       await loadFixture(confirmCreditorFixture);
       const { DebTContract, creditor1, producerHash, consumerHash } = await loadFixture(confirmAnthorCreditorFixture);
 
-      const { creditor, holdAmount, producerHash: _producerHash } = await DebTContract.connect(creditor1).debtConsumed(consumerHash);
+      const { creditor, amount, producerHash: _producerHash } = await DebTContract.connect(creditor1).debtConsumed(consumerHash);
 
       const creditorHash = await DebTContract.connect(creditor1).creditorHash(creditor1);
       const isExistHash = creditorHash.includes(consumerHash);
 
       assert.equal(creditor, creditor1.address);
-      assert.equal(holdAmount, initConfirmAmount);
+      assert.equal(amount, initConfirmAmount);
       assert.equal(_producerHash, producerHash);
       assert.equal(isExistHash, true);
     });

@@ -218,7 +218,7 @@ contract DebT is IDebT, IDebTErrors {
             _amount
         );
 
-        uint256 _beginTime = block.timestamp;
+        uint256 _confirmTime = block.timestamp;
         uint256 _currentPeriod = 1; // 当前期数
         uint256 _breachTimes = 0; // 违约次数
         uint256 _lastUnpaid = 0; // 上期未还清的数量，不包括违约金部分
@@ -227,7 +227,7 @@ contract DebT is IDebT, IDebTErrors {
         bytes32 _consumerHash = keccak256(
             abi.encodePacked(
                 _producerHash,
-                _beginTime,
+                _confirmTime,
                 _currentPeriod,
                 _breachTimes,
                 _creditor
@@ -238,13 +238,13 @@ contract DebT is IDebT, IDebTErrors {
         // 若不存在相同hash的债务，创建并添加到债权人的债务列表
         DebtConsumer memory _debtConsumer = _debtConsumed[_consumerHash];
 
-        if (_debtConsumer.holdAmount == 0) {
+        if (_debtConsumer.amount == 0) {
             _addConsumerDebt(
                 DebtConsumer({
                     creditor: _creditor,
-                    holdAmount: _amount,
+                    amount: _amount,
                     producerHash: _producerHash,
-                    beginTime: block.timestamp,
+                    confirmTime: block.timestamp,
                     currentPeriod: _currentPeriod,
                     breachTimes: _breachTimes,
                     lastUnpaid: _lastUnpaid
@@ -270,8 +270,8 @@ contract DebT is IDebT, IDebTErrors {
             revert IllegalArgumentValue(_amount);
         }
 
-        if (_debtConsumer.holdAmount < _amount) {
-            revert InsufficientShares(_debtConsumer.holdAmount, _amount);
+        if (_debtConsumer.amount < _amount) {
+            revert InsufficientShares(_debtConsumer.amount, _amount);
         }
 
         uint256 _allowance = creditorAllowance[_debtConsumer.creditor][
@@ -284,23 +284,30 @@ contract DebT is IDebT, IDebTErrors {
 
         // 原债权人持有数量减少
         // 若债务全部转移，删除原债权人持有的债务信息
-        if (_debtConsumer.holdAmount == _amount) {
+        if (_debtConsumer.amount == _amount) {
             _deleteConsumerDebt(_consumerHash, _debtConsumer.creditor);
         } else {
             _splitConsumerDebt(
                 _consumerHash,
                 _amount,
                 _debtConsumer.lastUnpaid *
-                    ((_debtConsumer.holdAmount - _amount) /
-                        _debtConsumer.holdAmount)
+                    ((_debtConsumer.amount - _amount) / _debtConsumer.amount)
             );
         }
+
+        // 扣减额度
+        _deductCreditorAllowance(
+            _debtConsumer.creditor,
+            msg.sender,
+            _consumerHash,
+            _amount
+        );
 
         // 生成新的hash，用于对还款信息和债权人的索引，相同hash的债务可以进行合并
         bytes32 _newConsumerHash = keccak256(
             abi.encodePacked(
                 _debtConsumer.producerHash,
-                _debtConsumer.beginTime,
+                _debtConsumer.confirmTime,
                 _debtConsumer.currentPeriod,
                 _debtConsumer.breachTimes,
                 _creditor
@@ -311,13 +318,13 @@ contract DebT is IDebT, IDebTErrors {
         // 若不存在相同hash的债务，创建并添加到债权人的债务列表
         DebtConsumer memory _debtConsumerNew = _debtConsumed[_newConsumerHash];
 
-        if (_debtConsumerNew.holdAmount == 0) {
+        if (_debtConsumerNew.amount == 0) {
             _addConsumerDebt(
                 DebtConsumer({
                     creditor: _creditor,
-                    holdAmount: _amount,
+                    amount: _amount,
                     producerHash: _debtConsumer.producerHash,
-                    beginTime: _debtConsumer.beginTime,
+                    confirmTime: _debtConsumer.confirmTime,
                     currentPeriod: _debtConsumer.currentPeriod,
                     breachTimes: _debtConsumer.breachTimes,
                     lastUnpaid: _debtConsumer.lastUnpaid
@@ -329,17 +336,9 @@ contract DebT is IDebT, IDebTErrors {
             _mergeConsumerDebt(
                 _newConsumerHash,
                 _amount,
-                _debtConsumer.lastUnpaid * (_amount / _debtConsumer.holdAmount)
+                _debtConsumer.lastUnpaid * (_amount / _debtConsumer.amount)
             );
         }
-
-        // 扣减额度
-        _deductCreditorAllowance(
-            _debtConsumer.creditor,
-            msg.sender,
-            _consumerHash,
-            _amount
-        );
 
         emit Consume(
             _debtConsumer.creditor,
@@ -417,7 +416,7 @@ contract DebT is IDebT, IDebTErrors {
         uint256 _lastUnpaid
     ) private {
         DebtConsumer storage s_debtConsumer = _debtConsumed[_consumerHash];
-        s_debtConsumer.holdAmount = s_debtConsumer.holdAmount - _amount;
+        s_debtConsumer.amount = s_debtConsumer.amount - _amount;
         s_debtConsumer.lastUnpaid = s_debtConsumer.lastUnpaid - _lastUnpaid;
     }
 
@@ -428,7 +427,7 @@ contract DebT is IDebT, IDebTErrors {
         uint256 _lastUnpaid
     ) private {
         DebtConsumer storage s_debtConsumer = _debtConsumed[_consumerHash];
-        s_debtConsumer.holdAmount = s_debtConsumer.holdAmount + _amount;
+        s_debtConsumer.amount = s_debtConsumer.amount + _amount;
         s_debtConsumer.lastUnpaid = s_debtConsumer.lastUnpaid + _lastUnpaid;
     }
 
