@@ -4,13 +4,14 @@ import { useMemo, useState } from "react"
 import { ContractTransactionResponse, ContractTransactionReceipt, JsonRpcApiProvider, JsonRpcSigner, ethers } from "ethers"
 import { Card, Empty, Layout, Typography, message } from 'antd'
 import { Artifact, ContractData, HistoryRecord, HistoryRecordProvided } from '@/lib/const'
-import { contractComponent, getDefaultAccountNameMap } from '@/lib/utils'
+import { contractConfig, getDefaultAccountNameMap } from '@/lib/utils'
 import { InputValueData } from '@/components/common/FuncExecution/const'
 import styles from "@/styles/index.module.scss"
 import ConnectModal from "../components/index/ConnectModal"
 import DeployedListPanel from '@/components/index/DeployedListPanel'
 import HistoryPanel from '@/components/index/HistoryPanel'
 import InfoPanel from '@/components/index/InfoPanel'
+import ContractPanel from '@/components/index/ContractPanel'
 
 export default function Index({ artifacts }: { artifacts: Artifact[] }) {
   const [provider, setProvider] = useState<JsonRpcApiProvider | null>(null) // 当前连接到hardhat网络的provider
@@ -36,11 +37,6 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
   const currAccount = useMemo(() => {
     return accounts.find(account => account.address === currAccountAddress) ?? null
   }, [currAccountAddress, accounts])
-
-  // 当前选中合约要显示的组件
-  const ContractComponent = useMemo(() => {
-    return currContract ? contractComponent[currContract.name] ?? null : null
-  }, [currContract])
 
   // 账户地址和别名数组
   const accountList = useMemo(() => {
@@ -224,8 +220,9 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
               title={`${currContract ? currContract.name : ''} 合约可执行方法`}
               className={`${styles['contract-panel']} ${styles['fixed-card-body']}`}
             >
-              {ContractComponent ?
-                <ContractComponent
+              {currContract && contractConfig[currContract.name] ?
+                <ContractPanel
+                  config={contractConfig[currContract?.name ?? '']}
                   accounts={accountList}
                   onExecFunction={handleExecFunction}
                   onHistoryRecord={handleRecordHistory}

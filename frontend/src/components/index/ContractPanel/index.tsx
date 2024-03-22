@@ -1,22 +1,22 @@
 import { Divider } from "antd"
-import { SFTFunctions } from "./const"
 import FuncExecution from "@/components/common/FuncExecution"
-import { AccountData } from "../InfoPanel/const"
 import { InputValueData } from "@/components/common/FuncExecution/const"
-import { ExecResult, HistoryRecordProvided } from "@/lib/const"
+import { ContractFunctionConfig, ExecResult, HistoryRecordProvided } from "@/lib/const"
+import { AccountData } from "../InfoPanel/const"
 
 interface Props {
   accounts: AccountData[]
+  config: ContractFunctionConfig[]
   onExecFunction: (funcName: string, args: InputValueData[]) => Promise<ExecResult>
   onHistoryRecord: (data: HistoryRecordProvided) => void
 }
 
-export default function Index({ accounts, onExecFunction, onHistoryRecord }: Props) {
+export default function Index({ accounts, config, onExecFunction, onHistoryRecord }: Props) {
   return <>
-    {SFTFunctions.map(config => (
-      <div key={config.name}>
+    {config.map(item => (
+      <div key={item.name}>
         <FuncExecution
-          {...config}
+          {...item}
           accounts={accounts}
           onExecFunction={onExecFunction}
           onHistoryRecord={onHistoryRecord}

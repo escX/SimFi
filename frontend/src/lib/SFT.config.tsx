@@ -2,7 +2,7 @@ import { ArgStyle, ArgType, ContractFunctionConfig, StateMutability } from "@/li
 import { getAccountName, getDescNode } from "@/lib/utils"
 import { Typography } from "antd"
 
-export const SFTFunctions: ContractFunctionConfig[] = [
+const config: ContractFunctionConfig[] = [
   {
     name: 'totalSupply',
     inputs: [],
@@ -103,3 +103,5 @@ export const SFTFunctions: ContractFunctionConfig[] = [
     }
   },
 ]
+
+export default config

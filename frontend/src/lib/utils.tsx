@@ -1,8 +1,9 @@
 import { JsonRpcSigner } from "ethers"
-import dynamic from "next/dynamic"
 import { Typography } from "antd"
-import { ComponentType } from "react"
 import { AccountData } from "@/components/index/InfoPanel/const"
+import SFTConfig from "./SFT.config"
+import DebTConfig from "./DebT.config"
+import ExchangeConfig from "./Exchange.config"
 
 export const HARDHAT_NODE_URL = "http://localhost:8545"
 
@@ -15,8 +16,10 @@ export const getDefaultAccountNameMap = (accounts: JsonRpcSigner[]) => {
   return map
 }
 
-export const contractComponent: Record<string, ComponentType<any>> = {
-  'SFT': dynamic(() => import('@/components/index/ContractSFT'))
+export const contractConfig: Record<string, any> = {
+  'SFT': SFTConfig,
+  'DebT': DebTConfig,
+  'Exchange': ExchangeConfig,
 }
 
 export const getDescNode = (data: string | number | undefined | null) => {
