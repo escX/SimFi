@@ -1,6 +1,6 @@
 import { ContractData, HistoryRecord } from "@/lib/const"
-import { Card, Divider, Empty, Space, Tag, Typography } from "antd"
-import { UserOutlined, AuditOutlined, FunctionOutlined, FieldTimeOutlined, CloseOutlined } from "@ant-design/icons"
+import { Card, Collapse, Empty, Space, Tag, Typography } from "antd"
+import { UserOutlined, AuditOutlined, FunctionOutlined, FieldTimeOutlined, CloseOutlined, FlagOutlined } from "@ant-design/icons"
 import { AccountData } from "../InfoPanel/const"
 import { HistoryFilterData, colors } from "./const"
 import { useMemo, useState } from "react"
@@ -36,6 +36,71 @@ export default function Index({ className, historyRecord, accounts, contracts }:
     })
   }, [filterData, historyRecord, contracts, accounts])
 
+  const recordRenderItems = useMemo(() => {
+    return recordAfterFilter.map((record, index) => {
+      const account = accounts.map((account, index) => ({ ...account, color: colors[index] })).find(account => account.address === record.accountAddress)!
+      const contract = contracts.find(contract => contract.address === record.contractAddress)
+
+      const recordRender = (
+        <>
+          <div>
+            <Tag icon={<UserOutlined />} color={account.color}>{account.name}</Tag>
+            {record.getDescription(record.inputs, record.outputs, accounts)}
+          </div>
+
+          <div style={{ marginTop: 12 }}>
+            <Tag
+              icon={contract === undefined ? <CloseOutlined /> : <AuditOutlined />}
+              color={contract === undefined ? 'error' : ''}
+              bordered={false}
+            >
+              {`${record.contractName}: ${new Date(record.contractTimestamp).toLocaleString()}`}
+            </Tag>
+            <Tag
+              icon={contract === undefined ? <CloseOutlined /> : <FunctionOutlined />}
+              color={contract === undefined ? 'error' : ''}
+              bordered={false}
+            >
+              {record.functionName}
+            </Tag>
+          </div>
+
+          <div style={{ marginTop: 12 }}>
+            <Tag
+              icon={contract === undefined ? <CloseOutlined /> : <FieldTimeOutlined />}
+              color={contract === undefined ? 'error' : ''}
+              bordered={false}
+            >
+              {new Date(record.execTimestamp).toLocaleString()}
+            </Tag>
+          </div>
+        </>
+      )
+
+      const logRender = record.logs.map(log => {
+        return (
+          <div key={log.name} style={{marginBottom: 12}}>
+            <Tag icon={<FlagOutlined />}>{log.name}</Tag>
+            <div style={{marginTop: 5}}>
+              {log.result.map((item, index) => (
+                <div key={index}>
+                  <Typography.Text strong>{item.name}</Typography.Text>
+                  <Typography.Text style={{wordBreak: 'break-all'}}>：{String(item.value)}</Typography.Text>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })
+
+      return {
+        key: index,
+        label: recordRender,
+        children: logRender,
+      }
+    })
+  }, [recordAfterFilter])
+
   const handleResetFilter = () => {
     setFilterData({
       accounts: [],
@@ -62,48 +127,7 @@ export default function Index({ className, historyRecord, accounts, contracts }:
       }>
         {recordAfterFilter.length === 0 ?
           <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} /> :
-          recordAfterFilter.map((record, index) => {
-            const account = accounts.map((account, index) => ({ ...account, color: colors[index] })).find(account => account.address === record.accountAddress)!
-            const contract = contracts.find(contract => contract.address === record.contractAddress)
-
-            return (
-              <div key={index}>
-                <div>
-                  <Tag icon={<UserOutlined />} color={account.color}>{account.name}</Tag>
-                  {record.getDescription(record.inputs, record.outputs, accounts)}
-                </div>
-
-                <div style={{ marginTop: 12 }}>
-                  <Tag
-                    icon={contract === undefined ? <CloseOutlined /> : <AuditOutlined />}
-                    color={contract === undefined ? 'error' : ''}
-                    bordered={false}
-                  >
-                    {`${record.contractName}: ${new Date(record.contractTimestamp).toLocaleString()}`}
-                  </Tag>
-                  <Tag
-                    icon={contract === undefined ? <CloseOutlined /> : <FunctionOutlined />}
-                    color={contract === undefined ? 'error' : ''}
-                    bordered={false}
-                  >
-                    {record.functionName}
-                  </Tag>
-                </div>
-
-                <div style={{ marginTop: 12 }}>
-                  <Tag
-                    icon={contract === undefined ? <CloseOutlined /> : <FieldTimeOutlined />}
-                    color={contract === undefined ? 'error' : ''}
-                    bordered={false}
-                  >
-                    {new Date(record.execTimestamp).toLocaleString()}
-                  </Tag>
-                </div>
-
-                <Divider />
-              </div>
-            )
-          })
+          <Collapse ghost expandIconPosition="end" items={recordRenderItems} />
         }
       </Card>
 

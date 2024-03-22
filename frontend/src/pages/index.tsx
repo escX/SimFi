@@ -3,7 +3,7 @@ import path from 'path'
 import { useMemo, useState } from "react"
 import { ContractTransactionResponse, ContractTransactionReceipt, JsonRpcApiProvider, JsonRpcSigner, ethers } from "ethers"
 import { Card, Empty, Layout, Typography, message } from 'antd'
-import { Artifact, ContractData, HistoryRecord, HistoryRecordProvided } from '@/lib/const'
+import { Artifact, ContractData, ContractLogResult, HistoryRecord, HistoryRecordProvided } from '@/lib/const'
 import { contractConfig, getDefaultAccountNameMap } from '@/lib/utils'
 import { InputValueData } from '@/components/common/FuncExecution/const'
 import styles from "@/styles/index.module.scss"
@@ -137,9 +137,17 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
     }
   }
 
-  const handleExecFunction = async (funcName: string, args: InputValueData[]) => {
+  const handleExecFunction = async (funcName: string, args: InputValueData[], events: string[]) => {
     if (!!currContract) {
       try {
+        const logs: ContractLogResult[] = []
+
+        events.forEach(event => {
+          currContract.ref.once(event, (...result: any) => {
+            logs.push({name: event, result})
+          })
+        })
+
         const response = await currContract.ref.connect(currAccount).getFunction(funcName)(...args)
         let receipt: ContractTransactionReceipt | null = null
 
@@ -152,7 +160,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
           content: '执行成功',
         })
 
-        return Promise.resolve({ response, receipt })
+        return Promise.resolve({ response, receipt, logs })
       } catch (error) {
         messageApi.open({
           type: 'error',

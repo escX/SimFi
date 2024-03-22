@@ -43,6 +43,7 @@ const config: ContractFunctionConfig[] = [
     inputs: [
       { type: ArgType.Uint256, style: ArgStyle.BigintInput }
     ],
+    events: ['Transfer'],
     stateMutability: StateMutability.Nonpayable,
     getDescription: (inputs, outputs, accounts) => {
       return <Typography.Text>
@@ -55,6 +56,7 @@ const config: ContractFunctionConfig[] = [
     inputs: [
       { type: ArgType.Uint256, style: ArgStyle.BigintInput }
     ],
+    events: ['Transfer'],
     stateMutability: StateMutability.Nonpayable,
     getDescription: (inputs, outputs, accounts) => {
       return <Typography.Text>
@@ -68,6 +70,7 @@ const config: ContractFunctionConfig[] = [
       { type: ArgType.Address, style: ArgStyle.AccountSelect },
       { type: ArgType.Uint256, style: ArgStyle.BigintInput }
     ],
+    events: ['Transfer'],
     stateMutability: StateMutability.Nonpayable,
     getDescription: (inputs, outputs, accounts) => {
       return <Typography.Text>
@@ -81,6 +84,7 @@ const config: ContractFunctionConfig[] = [
       { type: ArgType.Address, style: ArgStyle.AccountSelect },
       { type: ArgType.Uint256, style: ArgStyle.BigintInput }
     ],
+    events: ['Approval'],
     stateMutability: StateMutability.Nonpayable,
     getDescription: (inputs, outputs, accounts) => {
       return <Typography.Text>
@@ -95,6 +99,7 @@ const config: ContractFunctionConfig[] = [
       { type: ArgType.Address, style: ArgStyle.AccountSelect },
       { type: ArgType.Uint256, style: ArgStyle.BigintInput }
     ],
+    events: ['Transfer'],
     stateMutability: StateMutability.Nonpayable,
     getDescription: (inputs, outputs, accounts) => {
       return <Typography.Text>

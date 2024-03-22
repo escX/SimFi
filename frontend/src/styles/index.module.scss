@@ -61,6 +61,10 @@
 
         .history-panel {
           @include fixed-card;
+
+          :global(.ant-card-body) {
+            padding: 12px 8px;
+          }
         }
       }
 
