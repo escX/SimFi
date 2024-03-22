@@ -88,8 +88,33 @@ async function creditorApproveFixture() {
   return { DebTContract, debtor, exchange, creditor1, creditor2, consumerHash };
 }
 
+// 授权全部
+async function creditorApproveAllFixture() {
+  const { DebTContract, debtor, exchange, creditor1, creditor2, consumerHash } = await loadFixture(confirmCreditorFixture);
+  const approveAmount = initConfirmAmount;
+
+  await DebTContract.connect(creditor1).creditorApprove(exchange, consumerHash, approveAmount);
+
+  return { DebTContract, debtor, exchange, creditor1, creditor2, consumerHash };
+}
+
 // 6、债权人creditor2通过交易所exchange，从债权人creditor1那里获取债权
 async function transferCreditorFixture() {
+  const { DebTContract, exchange, creditor1, creditor2, consumerHash } = await loadFixture(creditorApproveFixture);
+
+  await setFixedBlockTimestamp();
+
+  return new Promise((resolve, reject) => {
+    DebTContract.once("Consume", (...data) => {
+      resolve({ DebTContract, exchange, creditor1, creditor2, consumerHash1: consumerHash, consumerHash2: data[2] });
+    });
+
+    DebTContract.connect(exchange).transferCreditor(creditor2, consumerHash, initTransferAmount);
+  });
+}
+
+// 创建第二笔相同的交易
+async function transferAnthorCreditorFixture() {
   const { DebTContract, exchange, creditor1, creditor2, consumerHash } = await loadFixture(creditorApproveFixture);
 
   return new Promise((resolve, reject) => {
@@ -98,6 +123,20 @@ async function transferCreditorFixture() {
     });
 
     DebTContract.connect(exchange).transferCreditor(creditor2, consumerHash, initTransferAmount);
+  });
+}
+
+// 转移全部债权
+async function transferAllCreditorFixture() {
+  const { DebTContract, exchange, creditor1, creditor2, consumerHash } = await loadFixture(creditorApproveAllFixture);
+  const transferAmount = initConfirmAmount;
+
+  return new Promise((resolve, reject) => {
+    DebTContract.once("Consume", (...data) => {
+      resolve({ DebTContract, exchange, creditor1, creditor2, consumerHash1: consumerHash, consumerHash2: data[2] });
+    });
+
+    DebTContract.connect(exchange).transferCreditor(creditor2, consumerHash, transferAmount);
   });
 }
 
@@ -325,10 +364,9 @@ describe("DebT Contract", function () {
       await setFixedBlockTimestamp();
       await DebTContract.connect(exchange).confirmCreditor(creditor1, producerHash, initConfirmAmount);
 
-      const { amount, lastUnpaid } = await DebTContract.connect(exchange).debtConsumed(consumerHash);
+      const { amount } = await DebTContract.connect(exchange).debtConsumed(consumerHash);
 
       assert.equal(amount, initConfirmAmount * 2);
-      assert.equal(lastUnpaid, 0);
     });
 
     it("确认债务哈希不存在时，新建债务", async function () {
@@ -392,19 +430,47 @@ describe("DebT Contract", function () {
     });
 
     it("若转移全部债权，删除原有债权信息", async function () {
+      const { DebTContract, creditor1, consumerHash1 } = await loadFixture(transferAllCreditorFixture);
 
+      const {amount, creditor} = await DebTContract.connect(creditor1).debtConsumed(consumerHash1);
+      const creditorHash = await DebTContract.connect(creditor1).creditorHash(creditor1);
+      const isExistHash = creditorHash.includes(consumerHash1);
+
+      assert.equal(amount, 0);
+      assert.equal(creditor, ZERO_ADDRESS);
+      assert.equal(isExistHash, false);
     });
 
     it("若转移部分债权，分割原有债权份额", async function () {
+      const { DebTContract, creditor1, consumerHash1 } = await loadFixture(transferCreditorFixture);
+      const { amount } = await DebTContract.connect(creditor1).debtConsumed(consumerHash1);
 
+      assert.equal(amount, initConfirmAmount - initTransferAmount);
     });
 
     it("确认债务哈希存在时，合并债务", async function () {
+      const { DebTContract, exchange, creditor2, consumerHash1, consumerHash2 } = await loadFixture(transferCreditorFixture);
 
+      await setFixedBlockTimestamp();
+      await DebTContract.connect(exchange).transferCreditor(creditor2, consumerHash1, initTransferAmount);
+
+      const { amount } = await DebTContract.connect(creditor2).debtConsumed(consumerHash2);
+
+      assert.equal(amount, initTransferAmount * 2);
     });
 
-    it("确认债务哈希存在时，新建债务", async function () {
+    it("确认债务哈希不存在时，新建债务", async function () {
+      await loadFixture(transferCreditorFixture);
+      const { DebTContract, creditor2, consumerHash2 } = await loadFixture(transferAnthorCreditorFixture);
 
+      const { creditor, amount } = await DebTContract.connect(creditor2).debtConsumed(consumerHash2);
+
+      const creditorHash = await DebTContract.connect(creditor2).creditorHash(creditor2);
+      const isExistHash = creditorHash.includes(consumerHash2);
+
+      assert.equal(creditor, creditor2.address);
+      assert.equal(amount, initTransferAmount);
+      assert.equal(isExistHash, true);
     });
 
     it("触发Consume事件", async function () {
