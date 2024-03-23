@@ -7,7 +7,7 @@ import { AccountData } from "../InfoPanel/const"
 interface Props {
   accounts: AccountData[]
   config: ContractFunctionConfig[]
-  onExecFunction: (funcName: string, args: InputValueData[], events: string[]) => Promise<ExecResult>
+  onExecFunction: (funcName: string, args: InputValueData[]) => Promise<ExecResult>
   onHistoryRecord: (data: HistoryRecordProvided) => void
 }
 

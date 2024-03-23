@@ -9,11 +9,11 @@ import BigintInput from "./BigintInput"
 
 interface Props extends ContractFunctionConfig {
   accounts: AccountData[]
-  onExecFunction: (funcName: string, args: InputValueData[], events: string[]) => Promise<ExecResult>
+  onExecFunction: (funcName: string, args: InputValueData[]) => Promise<ExecResult>
   onHistoryRecord: (data: HistoryRecordProvided) => void
 }
 
-export default function Index({ name, inputs, events = [], stateMutability, getDescription, accounts, onExecFunction, onHistoryRecord }: Props) {
+export default function Index({ name, inputs, stateMutability, getDescription, accounts, onExecFunction, onHistoryRecord }: Props) {
   const [inputValues, setInputValues] = useState<InputValueData[]>([])
   const [outputValues, setOutputValues] = useState<any[]>([])
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false)
@@ -28,7 +28,7 @@ export default function Index({ name, inputs, events = [], stateMutability, getD
   const handleExec = () => {
     setConfirmLoading(true)
 
-    onExecFunction(name, inputValues, events).then(({ response, receipt, logs }) => {
+    onExecFunction(name, inputValues).then(({ response, receipt }) => {
       let txResponse: ContractTransactionResponse | null = null
       let txReceipt: ContractTransactionReceipt | null = null
       let outputs: any[] = []
@@ -54,19 +54,6 @@ export default function Index({ name, inputs, events = [], stateMutability, getD
         functionName: name,
         inputs: inputValues,
         outputs,
-        logs: logs.map(log => {
-          const lastIndex = (log.result?.length ?? 1) - 1
-          const eventPayload = log.result?.[lastIndex]
-          const fragment = eventPayload?.fragment?.inputs
-
-          return {
-            name: log.name,
-            result: (fragment ?? []).map((item: any, index: number) => ({
-              ...item,
-              value: eventPayload?.args?.[index]
-            }))
-          }
-        }),
         getDescription,
         transactionResponse: txResponse,
         transactionReceipt: txReceipt

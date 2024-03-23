@@ -45,30 +45,13 @@ export interface InputConfig {
 export interface ContractFunctionConfig {
   name: string
   inputs: InputConfig[]
-  events?: string[]
   stateMutability: StateMutability
   getDescription: (inputs: any[], outputs: any[], accounts: AccountData[]) => React.ReactNode
-}
-
-export interface ContractLogResult {
-  name: string
-  result: any[]
 }
 
 export interface ExecResult {
   response: any
   receipt: ContractTransactionReceipt | null
-  logs: ContractLogResult[]
-}
-
-export interface LogRecord {
-  name: string
-  result: {
-    value: any
-    name: string
-    indexed: boolean
-    type: string
-  }[]
 }
 
 export interface HistoryRecord {
@@ -80,10 +63,20 @@ export interface HistoryRecord {
   functionName: string
   inputs: InputValueData[]
   outputs: any[]
-  logs: LogRecord[]
   getDescription: (inputs: any[], outputs: any[], accounts: AccountData[]) => React.ReactNode
   transactionResponse: ContractTransactionResponse | null
   transactionReceipt: ContractTransactionReceipt | null
 }
 
 export type HistoryRecordProvided = Omit<HistoryRecord, 'accountAddress' | 'contractAddress' | 'contractName' | 'contractTimestamp'>
+
+export interface LogRecord {
+  eventName: string
+  topics: readonly string[]
+  result: {
+    value: any
+    name: string
+    indexed: boolean | null
+    type: string
+  }[]
+}

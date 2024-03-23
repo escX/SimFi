@@ -1,25 +1,28 @@
-import { ContractData, HistoryRecord } from "@/lib/const"
+import { ContractData, HistoryRecord, LogRecord } from "@/lib/const"
 import { Card, Collapse, Empty, Space, Tag, Typography } from "antd"
 import { UserOutlined, AuditOutlined, FunctionOutlined, FieldTimeOutlined, CloseOutlined, FlagOutlined } from "@ant-design/icons"
 import { AccountData } from "../InfoPanel/const"
 import { HistoryFilterData, colors } from "./const"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import FilterModal from "./FilterModal"
+import { EventLog } from "ethers"
 
 interface Props {
   className: string
   historyRecord: HistoryRecord[]
   accounts: AccountData[]
   contracts: ContractData[]
+  logRecord: EventLog[]
 }
 
-export default function Index({ className, historyRecord, accounts, contracts }: Props) {
+export default function Index({ className, historyRecord, accounts, contracts, logRecord }: Props) {
   const [filterData, setFilterData] = useState<HistoryFilterData>({
     accounts: [],
     contracts: [],
     displayDeletedContract: false
   })
   const [filterVisible, setFilterVisible] = useState<boolean>(false)
+  const [transactionLogMap, setTransactionLogMap] = useState<Record<string, LogRecord[]>>({})
 
   const recordAfterFilter = useMemo(() => {
     return historyRecord.filter(record => {
@@ -77,21 +80,23 @@ export default function Index({ className, historyRecord, accounts, contracts }:
         </>
       )
 
-      const logRender = record.logs.map(log => {
+      const transactionHash = record.transactionResponse?.hash
+
+      const logRender = transactionHash ? (transactionLogMap[transactionHash] ?? []).map(log => {
         return (
-          <div key={log.name} style={{marginBottom: 12}}>
-            <Tag icon={<FlagOutlined />}>{log.name}</Tag>
-            <div style={{marginTop: 5}}>
+          <div key={log.eventName} style={{ marginBottom: 12 }}>
+            <Tag icon={<FlagOutlined />}>{log.eventName}</Tag>
+            <div style={{ marginTop: 5 }}>
               {log.result.map((item, index) => (
                 <div key={index}>
                   <Typography.Text strong>{item.name}</Typography.Text>
-                  <Typography.Text style={{wordBreak: 'break-all'}}>：{String(item.value)}</Typography.Text>
+                  <Typography.Text style={{ wordBreak: 'break-all' }}>：{String(item.value)}</Typography.Text>
                 </div>
               ))}
             </div>
           </div>
         )
-      })
+      }) : null
 
       return {
         key: index,
@@ -99,7 +104,35 @@ export default function Index({ className, historyRecord, accounts, contracts }:
         children: logRender,
       }
     })
-  }, [recordAfterFilter])
+  }, [recordAfterFilter, transactionLogMap])
+
+  useEffect(() => {
+    const logMap: Record<string, LogRecord[]> = {}
+
+    historyRecord.forEach(record => {
+      const transaction = record.transactionResponse
+
+      if (transaction) {
+        const txHash = transaction.hash
+        const eventLogs = logRecord.filter(log => log.transactionHash === txHash)
+
+        if (eventLogs.length > 0) {
+          logMap[txHash] = eventLogs.map(log => ({
+            eventName: log.fragment.name,
+            topics: log.topics,
+            result: log.fragment.inputs.map((arg, index) => ({
+              value: log.args[index],
+              name: arg.name,
+              indexed: arg.indexed,
+              type: arg.type
+            }))
+          }))
+        }
+      }
+    })
+
+    setTransactionLogMap(logMap)
+  }, [historyRecord, logRecord])
 
   const handleResetFilter = () => {
     setFilterData({

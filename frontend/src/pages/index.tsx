@@ -1,9 +1,9 @@
 import fs from 'fs'
 import path from 'path'
 import { useMemo, useState } from "react"
-import { ContractTransactionResponse, ContractTransactionReceipt, JsonRpcApiProvider, JsonRpcSigner, ethers } from "ethers"
+import { ContractTransactionResponse, ContractTransactionReceipt, JsonRpcApiProvider, JsonRpcSigner, ethers, EventLog } from "ethers"
 import { Card, Empty, Layout, Typography, message } from 'antd'
-import { Artifact, ContractData, ContractLogResult, HistoryRecord, HistoryRecordProvided } from '@/lib/const'
+import { Artifact, ContractData, HistoryRecord, HistoryRecordProvided } from '@/lib/const'
 import { contractConfig, getDefaultAccountNameMap } from '@/lib/utils'
 import { InputValueData } from '@/components/common/FuncExecution/const'
 import styles from "@/styles/index.module.scss"
@@ -21,6 +21,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
   const [currAccountAddress, setCurrAccountAddress] = useState<string>() // 当前选中的账户地址
   const [currContractAddress, setCurrContractAddress] = useState<string>() // 当前选中的合约地址
   const [historyRecord, setHistoryRecord] = useState<HistoryRecord[]>([]) // 合约操作历史记录
+  const [logRecord, setLogRecord] = useState<EventLog[]>([]) // 事件日志记录
   const [messageApi, contextHolder] = message.useMessage()
 
   // 当前是否连接到hardhat网络
@@ -78,8 +79,11 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
         const factory: ethers.ContractFactory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, currAccount)
         const contractRef = await factory.deploy()
         await contractRef.waitForDeployment()
-        const deployedAddress = await contractRef.getAddress()
+        await contractRef.on("*", (event) => {
+          setLogRecord(record => [...record, event.log])
+        })
 
+        const deployedAddress = await contractRef.getAddress()
         if (contracts.length === 0) {
           setCurrContractAddress(deployedAddress)
         }
@@ -135,17 +139,9 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
     }
   }
 
-  const handleExecFunction = async (funcName: string, args: InputValueData[], events: string[]) => {
+  const handleExecFunction = async (funcName: string, args: InputValueData[]) => {
     if (!!currContract) {
       try {
-        const logs: ContractLogResult[] = []
-
-        events.forEach(event => {
-          currContract.ref.once(event, (...result: any) => {
-            logs.push({ name: event, result })
-          })
-        })
-
         const response = await currContract.ref.connect(currAccount).getFunction(funcName)(...args)
         let receipt: ContractTransactionReceipt | null = null
 
@@ -158,7 +154,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
           content: '执行成功',
         })
 
-        return Promise.resolve({ response, receipt, logs })
+        return Promise.resolve({ response, receipt })
       } catch (error) {
         messageApi.open({
           type: 'error',
@@ -238,10 +234,11 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
           </Layout.Content>
           <Layout.Sider width="420" className={styles['right-sider']}>
             <HistoryPanel
+              className={`${styles['history-panel']} ${styles['fixed-card-body']} history-panel`}
               historyRecord={historyRecord}
               accounts={accountList}
               contracts={contracts}
-              className={`${styles['history-panel']} ${styles['fixed-card-body']} history-panel`}
+              logRecord={logRecord}
             />
           </Layout.Sider>
         </Layout>
