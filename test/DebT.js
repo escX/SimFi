@@ -4,14 +4,14 @@ const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 const hre = require("hardhat");
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-const initCreatedAmount = 1000000000; // 债务人创造债务数量
+const initCreatedAmount = 1000000000; // 债务人创建债务份额
 const initInstalPeriods = 10;  // 分期期数
-const initInstalPayment = 120; // 每期还款金额
-const initInstalPenalty = 12;  // 每期逾期罚金
-const initDebtorApproveAmount = 20000; // 债务人授权交易所份额
-const initConfirmAmount = 10000; // 从债务人购买的份额
-const initCreditorApproveAmount = 2000; // 债权人授权交易所份额
-const initTransferAmount = 1000; // 从债权人购买的份额
+const initInstalPayment = 120; // 每期每份债务应偿还代币数量
+const initInstalPenalty = 12;  // 每期每份债务的违约金
+const initDebtorApproveAmount = 20000; // 债务人授权交易所的债务确认份额
+const initConfirmAmount = 10000; // 债务确认份额
+const initCreditorApproveAmount = 2000; // 债权人授权交易所的债务转移份额
+const initTransferAmount = 1000; // 债务转移额度
 
 // 设置固定时间戳，需要在配置文件中设置，allowBlocksWithSameTimestamp: true
 const TIMESTAMP1 = 8000000000;
@@ -21,7 +21,7 @@ async function setFixedBlockTimestamp(timestamp) {
   await hre.network.provider.send("evm_setNextBlockTimestamp", [timestamp]);
 }
 
-// 1、部署合约
+// 1、由debtor部署合约
 async function deployFixture() {
   const DebTContract = await ethers.deployContract("DebT");
   const [debtor, exchange, creditor1, creditor2, _] = await ethers.getSigners();
@@ -44,7 +44,7 @@ async function createDebtFixture() {
   });
 }
 
-// 3、债务人debtor给交易所exchange授权
+// 3、债务人debtor对交易所exchange授权债权确认份额
 async function debtorApproveFixture() {
   const { DebTContract, debtor, exchange, creditor1, creditor2, producerHash } = await loadFixture(createDebtFixture);
 
@@ -53,7 +53,7 @@ async function debtorApproveFixture() {
   return { DebTContract, debtor, exchange, creditor1, creditor2, producerHash };
 }
 
-// 4、债权人creditor1通过交易所exchange，从债务人debtor那里获取债权
+// 4、确认creditor1债权
 async function confirmCreditorFixture() {
   const { DebTContract, debtor, exchange, creditor1, creditor2, producerHash } = await loadFixture(debtorApproveFixture);
 
@@ -68,7 +68,7 @@ async function confirmCreditorFixture() {
   });
 }
 
-// 创建第二笔相同的交易
+// 第二笔相同的债权确认交易
 async function confirmAnthorCreditorFixture() {
   const { DebTContract, debtor, exchange, creditor1, creditor2, producerHash } = await loadFixture(debtorApproveFixture);
 
@@ -81,7 +81,7 @@ async function confirmAnthorCreditorFixture() {
   });
 }
 
-// 5、债权人creditor1给交易所exchange授权
+// 5、债权人creditor1对交易所exchange授权债权转移份额
 async function creditorApproveFixture() {
   const { DebTContract, debtor, exchange, creditor1, creditor2, consumerHash } = await loadFixture(confirmCreditorFixture);
 
@@ -90,7 +90,7 @@ async function creditorApproveFixture() {
   return { DebTContract, debtor, exchange, creditor1, creditor2, consumerHash };
 }
 
-// 授权全部
+// 授权全部持有份额
 async function creditorApproveAllFixture() {
   const { DebTContract, debtor, exchange, creditor1, creditor2, consumerHash } = await loadFixture(confirmCreditorFixture);
   const approveAmount = initConfirmAmount;
@@ -100,7 +100,7 @@ async function creditorApproveAllFixture() {
   return { DebTContract, debtor, exchange, creditor1, creditor2, consumerHash };
 }
 
-// 6、债权人creditor2通过交易所exchange，从债权人creditor1那里获取债权
+// 6、债权由creditor1转移到creditor2
 async function transferCreditorFixture() {
   const { DebTContract, exchange, creditor1, creditor2, consumerHash } = await loadFixture(creditorApproveFixture);
 
@@ -115,7 +115,7 @@ async function transferCreditorFixture() {
   });
 }
 
-// 创建第二笔相同的交易
+// 第二笔相同的债权转移交易
 async function transferAnthorCreditorFixture() {
   const { DebTContract, exchange, creditor1, creditor2, consumerHash } = await loadFixture(creditorApproveFixture);
 
@@ -146,7 +146,7 @@ describe("DebT Contract", function () {
   describe("createDebt", function () {
     it("债务数量为0时失败", async function () {
       const { DebTContract, debtor } = await loadFixture(deployFixture);
-      const amount = 0; // 债务人创造债务数量
+      const amount = 0;
 
       await expect(DebTContract.connect(debtor).createDebt(amount, initInstalPeriods, initInstalPayment, initInstalPenalty))
         .to.be.revertedWithCustomError(DebTContract, "IllegalArgumentUint256")
@@ -187,7 +187,7 @@ describe("DebT Contract", function () {
   });
 
   describe("revokeDebt", function () {
-    const initRevokeAmount = 10000; // 销毁债务份额
+    const initRevokeAmount = 10000;
 
     it("非债务创建者调用方法时失败", async function () {
       const { DebTContract, debtor, exchange, producerHash } = await loadFixture(createDebtFixture);

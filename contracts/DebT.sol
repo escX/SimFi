@@ -93,6 +93,7 @@ contract DebT is IDebT, IDebTErrors {
             revert IllegalArgumentUint256(_amount);
         }
 
+        // 用于索引债务信息的Hash
         bytes32 _producerHash = keccak256(
             abi.encodePacked(
                 msg.sender,
@@ -105,6 +106,8 @@ contract DebT is IDebT, IDebTErrors {
 
         DebtProducer memory _debtProducer = _debtProduced[_producerHash];
 
+        // 创建的债务信息与之前创建的债务相同时，合并份额
+        // 否则新建债务
         if (_debtProducer.amount == 0) {
             _addProducerDebt(
                 DebtProducer({
@@ -146,8 +149,8 @@ contract DebT is IDebT, IDebTErrors {
             revert InsufficientShares(_debtProducer.unconfirmedAmount, _amount);
         }
 
-        // 若销毁全部，删除债务信息
-        // 否则减少总量和未确认债权数量
+        // 债务没有确权份额，且撤销份额等于债务总份额时，删除债务信息
+        // 否则扣除未确权份额
         if (_debtProducer.amount == _amount) {
             _deleteProducerDebt(_producerHash, msg.sender);
         } else {
@@ -208,13 +211,13 @@ contract DebT is IDebT, IDebTErrors {
             revert InsufficientAuthorizedShares(_allowance, _amount);
         }
 
-        // 债权未确认的数量减少
+        // 扣除未确权份额
         _setUnconfirmedAmount(
             _producerHash,
             _debtProducer.unconfirmedAmount - _amount
         );
 
-        // 扣减额度
+        // 扣除交易所的债权确认额度
         _deductDebtorAllowance(
             _debtProducer.debtor,
             msg.sender,
@@ -223,11 +226,11 @@ contract DebT is IDebT, IDebTErrors {
         );
 
         uint256 _confirmTime = block.timestamp;
-        uint256 _currentPeriod = 1; // 当前期数
-        uint256 _breachTimes = 0; // 违约次数
-        uint256 _lastUnpaid = 0; // 上期未还清的数量，不包括违约金部分
+        uint256 _currentPeriod = 1;
+        uint256 _breachTimes = 0;
+        uint256 _lastUnpaid = 0;
 
-        // 生成新的hash，用于对还款信息和债权人的索引，相同hash的债务可以进行合并
+        // 用于索引偿还信息的索引
         bytes32 _consumerHash = keccak256(
             abi.encodePacked(
                 _producerHash,
@@ -238,8 +241,8 @@ contract DebT is IDebT, IDebTErrors {
             )
         );
 
-        // 若存在相同hash的债务，合并
-        // 若不存在相同hash的债务，创建并添加到债权人的债务列表
+        // 若存在相同偿还信息的债务，合并份额
+        // 否则，新增偿还信息
         DebtConsumer memory _debtConsumer = _debtConsumed[_consumerHash];
 
         if (_debtConsumer.amount == 0) {
@@ -290,8 +293,8 @@ contract DebT is IDebT, IDebTErrors {
             revert InsufficientAuthorizedShares(_allowance, _amount);
         }
 
-        // 原债权人持有数量减少
-        // 若债务全部转移，删除原债权人持有的债务信息
+        // 若债权全部转移，移除原债权人持有的份额
+        // 否则，原债权人持有份额减少
         if (_debtConsumer.amount == _amount) {
             _deleteConsumerDebt(_consumerHash, _debtConsumer.creditor);
         } else {
@@ -303,7 +306,7 @@ contract DebT is IDebT, IDebTErrors {
             );
         }
 
-        // 扣减额度
+        // 扣除交易所的债权转移额度
         _deductCreditorAllowance(
             _debtConsumer.creditor,
             msg.sender,
@@ -311,7 +314,7 @@ contract DebT is IDebT, IDebTErrors {
             _amount
         );
 
-        // 生成新的hash，用于对还款信息和债权人的索引，相同hash的债务可以进行合并
+        // 生成偿还信息的Hash
         bytes32 _newConsumerHash = keccak256(
             abi.encodePacked(
                 _debtConsumer.producerHash,
@@ -322,8 +325,8 @@ contract DebT is IDebT, IDebTErrors {
             )
         );
 
-        // 若存在相同hash的债务，合并债务持有量和未还清的数量
-        // 若不存在相同hash的债务，创建并添加到债权人的债务列表
+        // 若存在相同偿还信息的债务，合并份额
+        // 否则，新增偿还信息
         DebtConsumer memory _debtConsumerNew = _debtConsumed[_newConsumerHash];
 
         if (_debtConsumerNew.amount == 0) {
@@ -372,7 +375,7 @@ contract DebT is IDebT, IDebTErrors {
         emit Unauthorize(_exchange);
     }
 
-    // 从债务人创造的债务中分离出一部分份额
+    // 从未确权债务中扣除份额
     function _splitProducerDebt(
         bytes32 _producerHash,
         uint256 _amount
@@ -384,7 +387,7 @@ contract DebT is IDebT, IDebTErrors {
             _amount;
     }
 
-    // 与债务人创造的债务进行合并
+    // 未确权债务份额合并
     function _mergeProducerDebt(
         bytes32 _producerHash,
         uint256 _amount
@@ -396,7 +399,7 @@ contract DebT is IDebT, IDebTErrors {
             _amount;
     }
 
-    // 债务人创造债务
+    // 创建债务
     function _addProducerDebt(
         DebtProducer memory _debt,
         bytes32 _producerHash,
@@ -406,7 +409,7 @@ contract DebT is IDebT, IDebTErrors {
         _debtorHash[_debtor].push(_producerHash);
     }
 
-    // 债务人删除债务
+    // 移除未确权债务
     function _deleteProducerDebt(
         bytes32 _producerHash,
         address _debtor
@@ -415,7 +418,7 @@ contract DebT is IDebT, IDebTErrors {
         _debtorHash[_debtor].remove(_producerHash);
     }
 
-    // 债务人设置未确认的份额
+    // 设置未确权份额
     function _setUnconfirmedAmount(
         bytes32 _producerHash,
         uint256 _unconfirmedAmount
@@ -423,7 +426,7 @@ contract DebT is IDebT, IDebTErrors {
         _debtProduced[_producerHash].unconfirmedAmount = _unconfirmedAmount;
     }
 
-    // 从债权人持有债务中分离出一些份额
+    // 从持有债务中扣除份额
     function _splitConsumerDebt(
         bytes32 _consumerHash,
         uint256 _amount,
@@ -434,7 +437,7 @@ contract DebT is IDebT, IDebTErrors {
         s_debtConsumer.lastUnpaid = s_debtConsumer.lastUnpaid - _lastUnpaid;
     }
 
-    // 与债权人已有债务进行合并
+    // 与已持有份额进行合并
     function _mergeConsumerDebt(
         bytes32 _consumerHash,
         uint256 _amount,
@@ -455,7 +458,7 @@ contract DebT is IDebT, IDebTErrors {
         _creditorHash[_creditor].push(_consumerHash);
     }
 
-    // 删除债权人持有债务
+    // 移除原债权人持有的债务
     function _deleteConsumerDebt(
         bytes32 _consumerHash,
         address _creditor
@@ -464,7 +467,7 @@ contract DebT is IDebT, IDebTErrors {
         _creditorHash[_creditor].remove(_consumerHash);
     }
 
-    // 扣除债务人授权额度
+    // 扣除交易所债权确认额度
     function _deductDebtorAllowance(
         address debtor,
         address exchange,
@@ -476,7 +479,7 @@ contract DebT is IDebT, IDebTErrors {
             amount;
     }
 
-    // 扣除债权人授权额度
+    // 扣除交易所债权转移额度
     function _deductCreditorAllowance(
         address creditor,
         address exchange,

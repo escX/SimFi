@@ -1,8 +1,8 @@
 const { expect, assert } = require("chai");
 const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"; // 零地址
-const INIT_AMOUNT = 100; // 账户初始金额
-const ALLOWANCE_AMOUNT = 200; // deployer账户授权addr1账户的额度
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const INIT_AMOUNT = 100;
+const ALLOWANCE_AMOUNT = 200;
 
 async function initFixture() {
   const SFTContract = await ethers.deployContract("SFT");
