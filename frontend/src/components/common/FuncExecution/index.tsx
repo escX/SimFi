@@ -115,7 +115,7 @@ export default function Index({ name, inputs, stateMutability, getDescription, a
         {inputs.map(({ type, style }, index) => getParamNode(type, style, index))}
       </Space.Compact>
 
-      <div style={{ marginTop: 6 }}>
+      <div style={{ marginTop: 6, lineHeight: 1.7 }}>
         {getDescription(inputValues, outputValues, accounts)}
       </div>
     </>

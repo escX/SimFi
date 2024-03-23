@@ -27,7 +27,7 @@ export const getDescNode = (data: string | number | undefined | null) => {
     return <Typography.Text type="secondary"> ? </Typography.Text>
   }
 
-  return <Typography.Text code>{data.toString()}</Typography.Text>
+  return <Typography.Text code style={{ wordBreak: 'break-all' }}>{data.toString()}</Typography.Text>
 }
 
 export const getAccountName = (accounts: AccountData[], address: string) => {

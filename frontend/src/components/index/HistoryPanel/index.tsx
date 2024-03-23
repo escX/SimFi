@@ -46,7 +46,7 @@ export default function Index({ className, historyRecord, accounts, contracts, l
 
       const recordRender = (
         <>
-          <div>
+          <div style={{ lineHeight: 1.7 }}>
             <Tag icon={<UserOutlined />} color={account.color}>{account.name}</Tag>
             {record.getDescription(record.inputs, record.outputs, accounts)}
           </div>
@@ -84,7 +84,7 @@ export default function Index({ className, historyRecord, accounts, contracts, l
 
       const logRender = transactionHash ? (transactionLogMap[transactionHash] ?? []).map(log => {
         return (
-          <div key={log.eventName} style={{ marginBottom: 12 }}>
+          <div key={log.eventName} style={{ marginBottom: 12, lineHeight: 1.7 }}>
             <Tag icon={<FlagOutlined />}>{log.eventName}</Tag>
             <div style={{ marginTop: 5 }}>
               {log.result.map((item, index) => (
