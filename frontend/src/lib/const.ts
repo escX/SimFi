@@ -30,11 +30,13 @@ export enum StateMutability {
 export enum ArgType {
   Uint256 = 'uint256',
   Address = 'address',
+  Bytes32 = 'bytes32'
 }
 
 export enum ArgStyle {
   AccountSelect,
   BigintInput,
+  StringInput,
 }
 
 export interface InputConfig {

@@ -6,6 +6,7 @@ import { AccountData } from "@/components/index/InfoPanel/const"
 import { ContractTransactionResponse, ContractTransactionReceipt } from "ethers"
 import AccountSelect from "./AccountSelect"
 import BigintInput from "./BigintInput"
+import StringInput from "./StringInput"
 
 interface Props extends ContractFunctionConfig {
   accounts: AccountData[]
@@ -36,10 +37,10 @@ export default function Index({ name, inputs, stateMutability, getDescription, a
       if (response instanceof ContractTransactionResponse) {
         txResponse = response
       } else {
-        if (Object.prototype.toString.call(response) === '[object Proxy]') {
+        if (response instanceof Object) {
           outputs = response.toArray()
         } else {
-          outputs = [response.toString()] ?? []
+          outputs = [response.toString()]
         }
       }
 
@@ -91,6 +92,15 @@ export default function Index({ name, inputs, stateMutability, getDescription, a
         key={index}
         placeholder={type}
         value={(inputValues[index] ?? null) as number}
+        onChange={value => handleValueChange(index, value)}
+      />
+    }
+
+    if (style === ArgStyle.StringInput) {
+      return <StringInput
+        key={index}
+        placeholder={type}
+        value={(inputValues[index] ?? null) as string}
         onChange={value => handleValueChange(index, value)}
       />
     }

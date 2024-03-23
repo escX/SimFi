@@ -1,17 +1,16 @@
-import { InputNumber } from "antd"
+import { Input } from "antd"
 
 interface Props {
   placeholder: string
-  value: number | null
-  onChange: (value: number | null) => void
+  value: string
+  onChange: (value: string) => void
 }
 
 export default function Index({ placeholder, value, onChange }: Props) {
-  return <InputNumber
+  return <Input
     placeholder={placeholder}
-    min={0}
     value={value}
-    onChange={onChange}
+    onChange={e => onChange(e.target.value)}
     style={{ width: 90 }}
   />
 }

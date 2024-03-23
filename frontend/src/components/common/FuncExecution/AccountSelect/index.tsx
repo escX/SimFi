@@ -15,5 +15,6 @@ export default function Index({ placeholder, accounts, value, onChange }: Props)
     fieldNames={{ label: 'name', value: 'address' }}
     value={value}
     onChange={onChange}
+    style={{ width: 90 }}
   />
 }
