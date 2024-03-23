@@ -9,7 +9,8 @@ interface IDebTErrors {
     error IllegalExchange(address exchange);
 
     // 非法参数值
-    error IllegalArgumentValue(uint256 value);
+    error IllegalArgumentUint256(uint256 value);
+    error IllegalArgumentAddress(address value);
 
     // 份额不足
     error InsufficientShares(uint256 shares, uint256 needed);

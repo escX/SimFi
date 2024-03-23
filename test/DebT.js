@@ -13,10 +13,12 @@ const initConfirmAmount = 10000; // 从债务人购买的份额
 const initCreditorApproveAmount = 2000; // 债权人授权交易所份额
 const initTransferAmount = 1000; // 从债权人购买的份额
 
-async function setFixedBlockTimestamp() {
-  // 设置固定时间戳，需要在配置文件中设置，allowBlocksWithSameTimestamp: true
-  const TIMESTAMP = 9000000000;
-  await hre.network.provider.send("evm_setNextBlockTimestamp", [TIMESTAMP]);
+// 设置固定时间戳，需要在配置文件中设置，allowBlocksWithSameTimestamp: true
+const TIMESTAMP1 = 8000000000;
+const TIMESTAMP2 = 9000000000;
+
+async function setFixedBlockTimestamp(timestamp) {
+  await hre.network.provider.send("evm_setNextBlockTimestamp", [timestamp]);
 }
 
 // 1、部署合约
@@ -55,7 +57,7 @@ async function debtorApproveFixture() {
 async function confirmCreditorFixture() {
   const { DebTContract, debtor, exchange, creditor1, creditor2, producerHash } = await loadFixture(debtorApproveFixture);
 
-  await setFixedBlockTimestamp();
+  await setFixedBlockTimestamp(TIMESTAMP1);
 
   return new Promise(async (resolve, reject) => {
     await DebTContract.once("Consume", (...data) => {
@@ -102,7 +104,7 @@ async function creditorApproveAllFixture() {
 async function transferCreditorFixture() {
   const { DebTContract, exchange, creditor1, creditor2, consumerHash } = await loadFixture(creditorApproveFixture);
 
-  await setFixedBlockTimestamp();
+  await setFixedBlockTimestamp(TIMESTAMP2);
 
   return new Promise(async (resolve, reject) => {
     await DebTContract.once("Consume", (...data) => {
@@ -147,7 +149,7 @@ describe("DebT Contract", function () {
       const amount = 0; // 债务人创造债务数量
 
       await expect(DebTContract.connect(debtor).createDebt(amount, initInstalPeriods, initInstalPayment, initInstalPenalty))
-        .to.be.revertedWithCustomError(DebTContract, "IllegalArgumentValue")
+        .to.be.revertedWithCustomError(DebTContract, "IllegalArgumentUint256")
         .withArgs(amount);
     });
 
@@ -200,7 +202,7 @@ describe("DebT Contract", function () {
       const amount = 0;
 
       await expect(DebTContract.connect(debtor).revokeDebt(producerHash, amount))
-        .to.be.revertedWithCustomError(DebTContract, "IllegalArgumentValue")
+        .to.be.revertedWithCustomError(DebTContract, "IllegalArgumentUint256")
         .withArgs(amount);
     });
 
@@ -316,12 +318,20 @@ describe("DebT Contract", function () {
   });
 
   describe("confirmCreditor", function () {
+    it("交易对象为自己时失败", async function () {
+      const { DebTContract, exchange, debtor, producerHash } = await loadFixture(debtorApproveFixture);
+
+      await expect(DebTContract.connect(exchange).confirmCreditor(debtor, producerHash, initConfirmAmount))
+        .to.be.revertedWithCustomError(DebTContract, "IllegalArgumentAddress")
+        .withArgs(debtor);
+    });
+
     it("确认债权份额为0时失败", async function () {
       const { DebTContract, exchange, creditor1, producerHash } = await loadFixture(debtorApproveFixture);
       const amount = 0;
 
       await expect(DebTContract.connect(exchange).confirmCreditor(creditor1, producerHash, amount))
-        .to.be.revertedWithCustomError(DebTContract, "IllegalArgumentValue")
+        .to.be.revertedWithCustomError(DebTContract, "IllegalArgumentUint256")
         .withArgs(amount);
     });
 
@@ -361,7 +371,7 @@ describe("DebT Contract", function () {
     it("确认债务哈希存在时，合并债务", async function () {
       const { DebTContract, exchange, creditor1, consumerHash, producerHash } = await loadFixture(confirmCreditorFixture);
 
-      await setFixedBlockTimestamp();
+      await setFixedBlockTimestamp(TIMESTAMP1);
       await DebTContract.connect(exchange).confirmCreditor(creditor1, producerHash, initConfirmAmount);
 
       const { amount } = await DebTContract.connect(exchange).debtConsumed(consumerHash);
@@ -394,12 +404,20 @@ describe("DebT Contract", function () {
   });
 
   describe("transferCreditor", function () {
+    it("交易对象为自己时失败", async function () {
+      const { DebTContract, exchange, creditor1, consumerHash } = await loadFixture(creditorApproveFixture);
+
+      await expect(DebTContract.connect(exchange).transferCreditor(creditor1, consumerHash, initTransferAmount))
+        .to.be.revertedWithCustomError(DebTContract, "IllegalArgumentAddress")
+        .withArgs(creditor1);
+    });
+
     it("转移债权份额为0时失败", async function () {
       const { DebTContract, exchange, creditor2, consumerHash } = await loadFixture(creditorApproveFixture);
       const amount = 0;
 
       await expect(DebTContract.connect(exchange).transferCreditor(creditor2, consumerHash, amount))
-        .to.be.revertedWithCustomError(DebTContract, "IllegalArgumentValue")
+        .to.be.revertedWithCustomError(DebTContract, "IllegalArgumentUint256")
         .withArgs(amount);
     });
 
@@ -451,7 +469,7 @@ describe("DebT Contract", function () {
     it("确认债务哈希存在时，合并债务", async function () {
       const { DebTContract, exchange, creditor2, consumerHash1, consumerHash2 } = await loadFixture(transferCreditorFixture);
 
-      await setFixedBlockTimestamp();
+      await setFixedBlockTimestamp(TIMESTAMP2);
       await DebTContract.connect(exchange).transferCreditor(creditor2, consumerHash1, initTransferAmount);
 
       const { amount } = await DebTContract.connect(creditor2).debtConsumed(consumerHash2);
@@ -483,6 +501,14 @@ describe("DebT Contract", function () {
   });
 
   describe("authorizeExchange", function () {
+    it("非合约部署者调用方法时失败", async function () {
+      const { DebTContract, debtor, exchange } = await loadFixture(deployFixture);
+
+      await expect(DebTContract.connect(exchange).authorizeExchange(exchange))
+        .to.be.revertedWithCustomError(DebTContract, "IllegalCaller")
+        .withArgs(exchange, debtor);
+    });
+
     it("增加交易所的授权", async function () {
       const { DebTContract, debtor, exchange } = await loadFixture(deployFixture);
 
@@ -501,6 +527,23 @@ describe("DebT Contract", function () {
   });
 
   describe("unauthorizeExchange", function () {
+    it("非合约部署者调用方法时失败", async function () {
+      const { DebTContract, debtor, exchange } = await loadFixture(deployFixture);
+
+      await DebTContract.connect(debtor).authorizeExchange(exchange);
+      await expect(DebTContract.connect(exchange).unauthorizeExchange(exchange))
+        .to.be.revertedWithCustomError(DebTContract, "IllegalCaller")
+        .withArgs(exchange, debtor);
+    });
+
+    it("取消未认证的交易所时失败", async function () {
+      const { DebTContract, debtor, creditor1 } = await loadFixture(deployFixture);
+
+      await expect(DebTContract.connect(debtor).unauthorizeExchange(creditor1))
+        .to.be.revertedWithCustomError(DebTContract, "IllegalArgumentAddress")
+        .withArgs(creditor1);
+    });
+
     it("移除交易所的授权", async function () {
       const { DebTContract, debtor, exchange } = await loadFixture(deployFixture);
 
@@ -513,6 +556,7 @@ describe("DebT Contract", function () {
     it("触发Unauthorize事件", async function () {
       const { DebTContract, debtor, exchange } = await loadFixture(deployFixture);
 
+      await DebTContract.connect(debtor).authorizeExchange(exchange);
       await expect(DebTContract.connect(debtor).unauthorizeExchange(exchange))
         .to.emit(DebTContract, "Unauthorize")
         .withArgs(exchange);

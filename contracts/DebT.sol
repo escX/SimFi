@@ -90,7 +90,7 @@ contract DebT is IDebT, IDebTErrors {
         uint256 _instalPenalty
     ) external {
         if (_amount == 0) {
-            revert IllegalArgumentValue(_amount);
+            revert IllegalArgumentUint256(_amount);
         }
 
         bytes32 _producerHash = keccak256(
@@ -139,7 +139,7 @@ contract DebT is IDebT, IDebTErrors {
         DebtProducer memory _debtProducer = _debtProduced[_producerHash];
 
         if (_amount == 0) {
-            revert IllegalArgumentValue(_amount);
+            revert IllegalArgumentUint256(_amount);
         }
 
         if (_debtProducer.unconfirmedAmount < _amount) {
@@ -188,8 +188,12 @@ contract DebT is IDebT, IDebTErrors {
     ) external {
         DebtProducer memory _debtProducer = _debtProduced[_producerHash];
 
+        if (_debtProducer.debtor == _creditor) {
+            revert IllegalArgumentAddress(_creditor);
+        }
+
         if (_amount == 0) {
-            revert IllegalArgumentValue(_amount);
+            revert IllegalArgumentUint256(_amount);
         }
 
         if (_debtProducer.unconfirmedAmount < _amount) {
@@ -266,8 +270,12 @@ contract DebT is IDebT, IDebTErrors {
     ) external {
         DebtConsumer memory _debtConsumer = _debtConsumed[_consumerHash];
 
+        if (_debtConsumer.creditor == _creditor) {
+            revert IllegalArgumentAddress(_creditor);
+        }
+
         if (_amount == 0) {
-            revert IllegalArgumentValue(_amount);
+            revert IllegalArgumentUint256(_amount);
         }
 
         if (_debtConsumer.amount < _amount) {
@@ -354,6 +362,12 @@ contract DebT is IDebT, IDebTErrors {
     }
 
     function unauthorizeExchange(address _exchange) external onlyOwner {
+        bool isExist = allowedExchanges[_exchange];
+
+        if (!isExist) {
+            revert IllegalArgumentAddress(_exchange);
+        }
+
         delete allowedExchanges[_exchange];
         emit Unauthorize(_exchange);
     }
