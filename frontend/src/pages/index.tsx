@@ -68,8 +68,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
         content: '无法连接到Hardhat网络',
       })
 
-      console.error(error)
-      return Promise.reject()
+      return Promise.reject('无法连接到Hardhat网络')
     }
   }
 
@@ -117,8 +116,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
           content: '部署失败',
         })
 
-        console.error(error)
-        return Promise.reject()
+        return Promise.reject('部署失败')
       }
     } else {
       messageApi.open({
@@ -126,7 +124,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
         content: '无法获取当前账户',
       })
 
-      return Promise.reject()
+      return Promise.reject('无法获取当前账户')
     }
   }
 
@@ -144,7 +142,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
 
         events.forEach(event => {
           currContract.ref.once(event, (...result: any) => {
-            logs.push({name: event, result})
+            logs.push({ name: event, result })
           })
         })
 
@@ -167,8 +165,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
           content: '执行失败',
         })
 
-        console.error(error)
-        return Promise.reject()
+        return Promise.reject('执行失败')
       }
     } else {
       messageApi.open({
@@ -176,7 +173,7 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
         content: '无法获取当前合约',
       })
 
-      return Promise.reject()
+      return Promise.reject('无法获取当前合约')
     }
   }
 

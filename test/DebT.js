@@ -34,7 +34,7 @@ async function createDebtFixture() {
   await DebTContract.authorizeExchange(exchange);
 
   return new Promise(async (resolve) => {
-    DebTContract.once("Produce", (...data) => {
+    await DebTContract.once("Produce", (...data) => {
       resolve({ DebTContract, debtor, exchange, creditor1, creditor2, producerHash: data[1] });
     });
 
@@ -57,8 +57,8 @@ async function confirmCreditorFixture() {
 
   await setFixedBlockTimestamp();
 
-  return new Promise((resolve, reject) => {
-    DebTContract.once("Consume", (...data) => {
+  return new Promise(async (resolve, reject) => {
+    await DebTContract.once("Consume", (...data) => {
       resolve({ DebTContract, debtor, exchange, creditor1, creditor2, producerHash, consumerHash: data[2] });
     });
 
@@ -70,8 +70,8 @@ async function confirmCreditorFixture() {
 async function confirmAnthorCreditorFixture() {
   const { DebTContract, debtor, exchange, creditor1, creditor2, producerHash } = await loadFixture(debtorApproveFixture);
 
-  return new Promise((resolve, reject) => {
-    DebTContract.once("Consume", (...data) => {
+  return new Promise(async (resolve, reject) => {
+    await DebTContract.once("Consume", (...data) => {
       resolve({ DebTContract, debtor, exchange, creditor1, creditor2, producerHash, consumerHash: data[2] });
     });
 
@@ -104,8 +104,8 @@ async function transferCreditorFixture() {
 
   await setFixedBlockTimestamp();
 
-  return new Promise((resolve, reject) => {
-    DebTContract.once("Consume", (...data) => {
+  return new Promise(async (resolve, reject) => {
+    await DebTContract.once("Consume", (...data) => {
       resolve({ DebTContract, exchange, creditor1, creditor2, consumerHash1: consumerHash, consumerHash2: data[2] });
     });
 
@@ -117,8 +117,8 @@ async function transferCreditorFixture() {
 async function transferAnthorCreditorFixture() {
   const { DebTContract, exchange, creditor1, creditor2, consumerHash } = await loadFixture(creditorApproveFixture);
 
-  return new Promise((resolve, reject) => {
-    DebTContract.once("Consume", (...data) => {
+  return new Promise(async (resolve, reject) => {
+    await DebTContract.once("Consume", (...data) => {
       resolve({ DebTContract, exchange, creditor1, creditor2, consumerHash1: consumerHash, consumerHash2: data[2] });
     });
 
@@ -131,8 +131,8 @@ async function transferAllCreditorFixture() {
   const { DebTContract, exchange, creditor1, creditor2, consumerHash } = await loadFixture(creditorApproveAllFixture);
   const transferAmount = initConfirmAmount;
 
-  return new Promise((resolve, reject) => {
-    DebTContract.once("Consume", (...data) => {
+  return new Promise(async (resolve, reject) => {
+    await DebTContract.once("Consume", (...data) => {
       resolve({ DebTContract, exchange, creditor1, creditor2, consumerHash1: consumerHash, consumerHash2: data[2] });
     });
 
@@ -432,7 +432,7 @@ describe("DebT Contract", function () {
     it("若转移全部债权，删除原有债权信息", async function () {
       const { DebTContract, creditor1, consumerHash1 } = await loadFixture(transferAllCreditorFixture);
 
-      const {amount, creditor} = await DebTContract.connect(creditor1).debtConsumed(consumerHash1);
+      const { amount, creditor } = await DebTContract.connect(creditor1).debtConsumed(consumerHash1);
       const creditorHash = await DebTContract.connect(creditor1).creditorHash(creditor1);
       const isExistHash = creditorHash.includes(consumerHash1);
 
