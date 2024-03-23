@@ -127,6 +127,12 @@ interface IDebT {
     // 系统在还款时间从债务人账户转账代币给债权人，由交易所调用
     function transferToken() external;
 
+    // 设置未确权份额
+    function setUnconfirmedAmount(
+        bytes32 producerHash,
+        uint256 unconfirmedAmount
+    ) external;
+
     // 债权确认，由交易所调用
     function confirmCreditor(
         address creditor,

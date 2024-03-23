@@ -349,7 +349,7 @@ describe("DebT Contract", function () {
       const amount = initDebtorApproveAmount + 1;
 
       await expect(DebTContract.connect(exchange).confirmCreditor(creditor1, producerHash, amount))
-        .to.be.revertedWithCustomError(DebTContract, "InsufficientAuthorizedShares")
+        .to.be.revertedWithCustomError(DebTContract, "InsufficientAllowedShares")
         .withArgs(initDebtorApproveAmount, amount);
     });
 
@@ -435,7 +435,7 @@ describe("DebT Contract", function () {
       const amount = initCreditorApproveAmount + 1;
 
       await expect(DebTContract.connect(exchange).transferCreditor(creditor2, consumerHash, amount))
-        .to.be.revertedWithCustomError(DebTContract, "InsufficientAuthorizedShares")
+        .to.be.revertedWithCustomError(DebTContract, "InsufficientAllowedShares")
         .withArgs(initCreditorApproveAmount, amount);
     });
 

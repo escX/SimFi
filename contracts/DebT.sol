@@ -184,6 +184,13 @@ contract DebT is IDebT, IDebTErrors {
 
     function transferToken() external onlyExchange(msg.sender) {}
 
+    function setUnconfirmedAmount(
+        bytes32 _producerHash,
+        uint256 _unconfirmedAmount
+    ) public onlyExchange(msg.sender) {
+        _debtProduced[_producerHash].unconfirmedAmount = _unconfirmedAmount;
+    }
+
     function confirmCreditor(
         address _creditor,
         bytes32 _producerHash,
@@ -208,11 +215,11 @@ contract DebT is IDebT, IDebTErrors {
         ];
 
         if (_allowance < _amount) {
-            revert InsufficientAuthorizedShares(_allowance, _amount);
+            revert InsufficientAllowedShares(_allowance, _amount);
         }
 
         // 扣除未确权份额
-        _setUnconfirmedAmount(
+        setUnconfirmedAmount(
             _producerHash,
             _debtProducer.unconfirmedAmount - _amount
         );
@@ -290,7 +297,7 @@ contract DebT is IDebT, IDebTErrors {
         ][_consumerHash];
 
         if (_allowance < _amount) {
-            revert InsufficientAuthorizedShares(_allowance, _amount);
+            revert InsufficientAllowedShares(_allowance, _amount);
         }
 
         // 若债权全部转移，移除原债权人持有的份额
@@ -416,14 +423,6 @@ contract DebT is IDebT, IDebTErrors {
     ) private {
         delete _debtProduced[_producerHash];
         _debtorHash[_debtor].remove(_producerHash);
-    }
-
-    // 设置未确权份额
-    function _setUnconfirmedAmount(
-        bytes32 _producerHash,
-        uint256 _unconfirmedAmount
-    ) private {
-        _debtProduced[_producerHash].unconfirmedAmount = _unconfirmedAmount;
     }
 
     // 从持有债务中扣除份额
