@@ -23,8 +23,10 @@ async function setFixedBlockTimestamp(timestamp) {
 
 // 1、由debtor部署合约
 async function deployFixture() {
-  const DebTContract = await ethers.deployContract("DebT");
   const [debtor, exchange, creditor1, creditor2, _] = await ethers.getSigners();
+  const SFTContract = await ethers.deployContract("SFT");
+  const SFTAddress = SFTContract.getAddress();
+  const DebTContract = await ethers.deployContract("DebT", [SFTAddress]);
 
   return { DebTContract, debtor, exchange, creditor1, creditor2 };
 }

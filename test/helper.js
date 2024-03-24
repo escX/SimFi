@@ -1,0 +1,29 @@
+/**
+ * @dev 从多个Event中获取数据
+ * @param {Promise[]} listeners 监听方法数组
+ * @param {Promise} action 被监听动作
+ * @example
+ * const dataFromEvent = await watchAction([async function (resolve) {
+ *   await contract.once("EventName", function (...data) {
+ *     resolve(data);
+ *   });
+ * }], async function () {
+ *   await contract.method();
+ * });
+ */
+
+async function watchAction(listeners, action) {
+  const listenersWrap = listeners.map(listener => new Promise((resolve, reject) => listener(resolve)))
+
+  return new Promise(async (resolve, reject) => {
+    Promise.all(listenersWrap).then(resultList => {
+      resolve(resultList)
+    })
+
+    await action();
+  })
+}
+
+module.exports = {
+  watchAction
+}

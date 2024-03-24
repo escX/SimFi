@@ -7,9 +7,6 @@ import {IExchange} from "./interfaces/IExchange.sol";
 import {IExchangeErrors} from "./interfaces/IExchangeErrors.sol";
 
 contract Exchange is IExchange, IExchangeErrors {
-    IERC20 private immutable _STF;
-    IDebT private immutable _DebT;
-
     modifier onlySeller(bytes32 _productHash) {
         address seller = _product[_productHash].seller;
 
@@ -19,9 +16,14 @@ contract Exchange is IExchange, IExchangeErrors {
         _;
     }
 
+    IERC20 private immutable _STF;
+    IDebT private immutable _DebT;
+    address private immutable _owner;
+
     constructor(address _sftAddress, address _debtAddress) {
         _STF = IERC20(_sftAddress);
         _DebT = IDebT(_debtAddress);
+        _owner = msg.sender;
     }
 
     mapping(bytes32 _hash => Product) private _product;
@@ -56,7 +58,7 @@ contract Exchange is IExchange, IExchangeErrors {
             revert InsufficientAllowedShares(_allowance, _amount);
         }
 
-        // 交易hash，由debtHash，seller，timestamp生成
+        // 产品hash，由debtHash，seller，timestamp生成
         bytes32 _productHash = keccak256(
             abi.encodePacked(_debtHash, msg.sender, block.timestamp)
         );
@@ -77,7 +79,7 @@ contract Exchange is IExchange, IExchangeErrors {
         // 扣除未确认份额，防止被债务人撤销
         _DebT.setUnconfirmedAmount(_debtHash, _unconfirmedAmount - _amount);
 
-        emit Publish();
+        emit Publish(_productHash);
     }
 
     function publishConfirmed(
@@ -105,7 +107,7 @@ contract Exchange is IExchange, IExchangeErrors {
             revert InsufficientAllowedShares(_allowance, _amount);
         }
 
-        // 交易hash，由debtHash，seller，timestamp生成
+        // 产品hash，由debtHash，seller，timestamp生成
         bytes32 _productHash = keccak256(
             abi.encodePacked(_debtHash, msg.sender, block.timestamp)
         );
@@ -123,60 +125,88 @@ contract Exchange is IExchange, IExchangeErrors {
             soldTimestamp: uint256(0)
         });
 
-        emit Publish();
+        emit Publish(_productHash);
     }
 
     function revokeProduct(
         bytes32 _productHash
     ) external onlySeller(_productHash) {
         Product memory _p = _product[_productHash];
-        uint256 _unconfirmedAmount = _DebT
-            .debtProduced(_p.debtHash)
-            .unconfirmedAmount;
 
-        _product[_productHash].debtStatus = DebtStatus.Revoke;
+        if (
+            _p.debtType == DebtType.Unconfirmed &&
+            _p.debtStatus == DebtStatus.OnSale
+        ) {
+            uint256 _unconfirmedAmount = _DebT
+                .debtProduced(_p.debtHash)
+                .unconfirmedAmount;
 
-        // 恢复未确认份额
-        _DebT.setUnconfirmedAmount(_p.debtHash, _unconfirmedAmount + _p.amount);
+            _product[_productHash].debtStatus = DebtStatus.Revoke;
 
-        emit Revoke();
+            // 恢复未确认份额
+            _DebT.setUnconfirmedAmount(
+                _p.debtHash,
+                _unconfirmedAmount + _p.amount
+            );
+
+            emit Revoke();
+        }
+    }
+
+    function updateProductAmount(
+        bytes32 _productHash,
+        uint256 _amount
+    ) external onlySeller(_productHash) {
+        Product memory _p = _product[_productHash];
+
+        if (_p.debtStatus == DebtStatus.OnSale) {
+            _product[_productHash].amount = _amount;
+
+            emit Update();
+        }
     }
 
     function updateProductUnitPrice(
         bytes32 _productHash,
         uint256 _unitPrice
     ) external onlySeller(_productHash) {
-        _product[_productHash].unitPrice = _unitPrice;
+        Product memory _p = _product[_productHash];
 
-        emit Update();
+        if (_p.debtStatus == DebtStatus.OnSale) {
+            _product[_productHash].unitPrice = _unitPrice;
+
+            emit Update();
+        }
     }
 
     function buy(bytes32 _productHash) external {
         Product memory _p = _product[_productHash];
 
-        uint256 _allowance = _STF.allowance(msg.sender, address(this));
+        if (_p.debtStatus == DebtStatus.OnSale) {
+            uint256 _allowance = _STF.allowance(msg.sender, address(this));
 
-        if (_allowance < _p.amount) {
-            revert InsufficientAllowedShares(_allowance, _p.amount);
+            if (_allowance < _p.amount) {
+                revert InsufficientAllowedShares(_allowance, _p.amount);
+            }
+
+            // 代币转账
+            _STF.transferFrom(msg.sender, _p.seller, _p.amount * _p.unitPrice);
+
+            // 债权确认或转移
+            if (_p.debtType == DebtType.Unconfirmed) {
+                _DebT.confirmCreditor(msg.sender, _p.debtHash, _p.amount);
+            }
+
+            if (_p.debtType == DebtType.Confirmed) {
+                _DebT.transferCreditor(msg.sender, _p.debtHash, _p.amount);
+            }
+
+            // 状态改变
+            _product[_productHash].buyer = msg.sender;
+            _product[_productHash].debtStatus = DebtStatus.Sold;
+            _product[_productHash].soldTimestamp = block.timestamp;
+
+            emit Buy();
         }
-
-        // 代币转账
-        _STF.transferFrom(msg.sender, _p.seller, _p.amount * _p.unitPrice);
-
-        // 债权确认或转移
-        if (_p.debtType == DebtType.Unconfirmed) {
-            _DebT.confirmCreditor(msg.sender, _p.debtHash, _p.amount);
-        }
-
-        if (_p.debtType == DebtType.Confirmed) {
-            _DebT.transferCreditor(msg.sender, _p.debtHash, _p.amount);
-        }
-
-        // 状态改变
-        _product[_productHash].buyer = msg.sender;
-        _product[_productHash].debtStatus = DebtStatus.Sold;
-        _product[_productHash].soldTimestamp = block.timestamp;
-
-        emit Buy();
     }
 }

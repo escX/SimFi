@@ -26,7 +26,7 @@ interface IExchange {
         uint256 soldTimestamp; // 卖出时间
     }
 
-    event Publish();
+    event Publish(bytes32 productHash);
     event Revoke();
     event Update();
     event Buy();

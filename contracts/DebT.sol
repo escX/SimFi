@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IDebT} from "./interfaces/IDebT.sol";
 import {IDebTErrors} from "./interfaces/IDebTErrors.sol";
 import {ArrayLib} from "./utils/ArrayLib.sol";
@@ -40,9 +41,15 @@ contract DebT is IDebT, IDebTErrors {
         _;
     }
 
+    IERC20 private immutable _STF;
     string public constant name = "Debt Token";
     string public constant symbol = "DebT";
     address private immutable _owner;
+
+    constructor(address _sftAddress) {
+        _STF = IERC20(_sftAddress);
+        _owner = msg.sender;
+    }
 
     mapping(bytes32 _producerHash => DebtProducer) private _debtProduced;
     mapping(bytes32 _consumerHash => DebtConsumer) private _debtConsumed;
@@ -54,10 +61,6 @@ contract DebT is IDebT, IDebTErrors {
     mapping(address _creditor => mapping(address _exchange => mapping(bytes32 _consumerHash => uint256)))
         public creditorAllowance;
     mapping(address _exchange => bool) public allowedExchanges;
-
-    constructor() {
-        _owner = msg.sender;
-    }
 
     function debtProduced(
         bytes32 _producerHash

@@ -5,15 +5,6 @@ import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IERC20Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
 contract SFT is IERC20, IERC20Errors {
-    string public constant name = "SimFi Token";
-    string public constant symbol = "SFT";
-    address public immutable owner;
-
-    uint256 public totalSupply; // 货币总供应
-    mapping(address account => uint256) public balanceOf; // account账户余额
-    mapping(address account => mapping(address spender => uint256))
-        public allowance; // account账户授权spender账户的额度
-
     modifier onlyOwner() {
         if (owner != msg.sender) {
             revert ERC20InvalidSender(msg.sender);
@@ -21,9 +12,18 @@ contract SFT is IERC20, IERC20Errors {
         _;
     }
 
+    string public constant name = "SimFi Token";
+    string public constant symbol = "SFT";
+    address public immutable owner;
+
     constructor() {
         owner = msg.sender;
     }
+
+    uint256 public totalSupply; // 货币总供应
+    mapping(address account => uint256) public balanceOf; // account账户余额
+    mapping(address account => mapping(address spender => uint256))
+        public allowance; // account账户授权spender账户的额度
 
     // 调用者转账给_to账户
     function transfer(address _to, uint256 _value) external returns (bool) {
