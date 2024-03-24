@@ -46,14 +46,14 @@ contract Exchange is IExchange, IExchangeErrors {
             revert InsufficientShares(_unconfirmedAmount, _amount);
         }
 
-        uint256 allowance = _DebT.debtorAllowance(
+        uint256 _allowance = _DebT.debtorAllowance(
             msg.sender,
             address(this),
             _debtHash
         );
 
-        if (allowance < _amount) {
-            revert InsufficientAllowedShares(allowance, _amount);
+        if (_allowance < _amount) {
+            revert InsufficientAllowedShares(_allowance, _amount);
         }
 
         // 交易hash，由debtHash，seller，timestamp生成
@@ -95,14 +95,14 @@ contract Exchange is IExchange, IExchangeErrors {
             revert InsufficientShares(_debtConsumer.amount, _amount);
         }
 
-        uint256 allowance = _DebT.creditorAllowance(
+        uint256 _allowance = _DebT.creditorAllowance(
             msg.sender,
             address(this),
             _debtHash
         );
 
-        if (allowance < _amount) {
-            revert InsufficientAllowedShares(allowance, _amount);
+        if (_allowance < _amount) {
+            revert InsufficientAllowedShares(_allowance, _amount);
         }
 
         // 交易hash，由debtHash，seller，timestamp生成
@@ -142,15 +142,6 @@ contract Exchange is IExchange, IExchangeErrors {
         emit Revoke();
     }
 
-    function updateProductAmount(
-        bytes32 _productHash,
-        uint256 _amount
-    ) external onlySeller(_productHash) {
-        _product[_productHash].amount = _amount;
-
-        emit Update();
-    }
-
     function updateProductUnitPrice(
         bytes32 _productHash,
         uint256 _unitPrice
@@ -163,10 +154,10 @@ contract Exchange is IExchange, IExchangeErrors {
     function buy(bytes32 _productHash) external {
         Product memory _p = _product[_productHash];
 
-        uint256 allowance = _STF.allowance(msg.sender, address(this));
+        uint256 _allowance = _STF.allowance(msg.sender, address(this));
 
-        if (allowance < _p.amount) {
-            revert InsufficientAllowedShares(allowance, _p.amount);
+        if (_allowance < _p.amount) {
+            revert InsufficientAllowedShares(_allowance, _p.amount);
         }
 
         // 代币转账

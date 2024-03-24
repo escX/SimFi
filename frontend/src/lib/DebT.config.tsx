@@ -11,7 +11,7 @@ const config: ContractFunctionConfig[] = [
     stateMutability: StateMutability.View,
     getDescription: (inputs, outputs, accounts) => {
       return <Typography.Text>
-        查询{getDescNode(inputs[0])}债务信息，债务人：{getDescNode(getAccountName(accounts, outputs[0]))}，债务份额：{getDescNode(outputs[1])}，未确认份额：{getDescNode(outputs[2])}，分期期数：{getDescNode(outputs[3])}，每期每份债务应偿付{getDescNode(outputs[4])}，每期每份债务违约金：{getDescNode(outputs[5])}
+        查询{getDescNode(inputs[0])}债务信息，债务人：{getDescNode(getAccountName(accounts, outputs[0]))}，债务份额：{getDescNode(outputs[1])}，未确权份额：{getDescNode(outputs[2])}，分期期数：{getDescNode(outputs[3])}，每期每份债务应偿还代币数量：{getDescNode(outputs[4])}，每期每份债务的违约金：{getDescNode(outputs[5])}
       </Typography.Text>
     }
   },
@@ -23,7 +23,7 @@ const config: ContractFunctionConfig[] = [
     stateMutability: StateMutability.View,
     getDescription(inputs, outputs, accounts) {
       return <Typography.Text>
-        查询债权{getDescNode(inputs[0])}信息，债权人：{getDescNode(getAccountName(accounts, outputs[0]))}，持有数量：{getDescNode(outputs[1])}，债务哈希：{getDescNode(outputs[2])}，确认债务时间：{getDescNode(outputs[3])}，当前期数：{getDescNode(outputs[4])}，违约次数：{getDescNode(outputs[5])}，上次未还清份额：{getDescNode(outputs[6])}
+        查询债权{getDescNode(inputs[0])}信息，债权人：{getDescNode(getAccountName(accounts, outputs[0]))}，持有份额：{getDescNode(outputs[1])}，债务哈希：{getDescNode(outputs[2])}，确认债权时间：{getDescNode(outputs[3])}，当前期数：{getDescNode(outputs[4])}，违约次数：{getDescNode(outputs[5])}，上期未还清的代币数量：{getDescNode(outputs[6])}
       </Typography.Text>
     },
   },
@@ -35,7 +35,7 @@ const config: ContractFunctionConfig[] = [
     stateMutability: StateMutability.View,
     getDescription(inputs, outputs, accounts) {
       return <Typography.Text>
-        查询{getDescNode(getAccountName(accounts, inputs[0]))}创建的债务哈希有：{outputs.map((output, index) => <span key={index}>{getDescNode(output)}</span>)}
+        查询{getDescNode(getAccountName(accounts, inputs[0]))}创建的债务哈希：{outputs.map((output, index) => <span key={index}>{getDescNode(output)}</span>)}
       </Typography.Text>
     },
   },
@@ -61,7 +61,7 @@ const config: ContractFunctionConfig[] = [
     stateMutability: StateMutability.View,
     getDescription(inputs, outputs, accounts) {
       return <Typography.Text>
-        {getDescNode(getAccountName(accounts, inputs[0]))}授权交易所{getDescNode(getAccountName(accounts, inputs[1]))}，对于债务{getDescNode(inputs[2])}的交易额度为{getDescNode(outputs[0])}
+        {getDescNode(getAccountName(accounts, inputs[0]))}授权交易所{getDescNode(getAccountName(accounts, inputs[1]))}，对于债务{getDescNode(inputs[2])}的债权确认额度为{getDescNode(outputs[0])}
       </Typography.Text>
     },
   },
@@ -75,7 +75,7 @@ const config: ContractFunctionConfig[] = [
     stateMutability: StateMutability.View,
     getDescription(inputs, outputs, accounts) {
       return <Typography.Text>
-        {getDescNode(getAccountName(accounts, inputs[0]))}授权交易所{getDescNode(getAccountName(accounts, inputs[1]))}，对于债务{getDescNode(inputs[2])}的交易额度为{getDescNode(outputs[0])}
+        {getDescNode(getAccountName(accounts, inputs[0]))}授权交易所{getDescNode(getAccountName(accounts, inputs[1]))}，对于债务{getDescNode(inputs[2])}的债权转移额度为{getDescNode(outputs[0])}
       </Typography.Text>
     },
   },
@@ -102,7 +102,7 @@ const config: ContractFunctionConfig[] = [
     stateMutability: StateMutability.Nonpayable,
     getDescription(inputs, outputs, accounts) {
       return <Typography.Text>
-        创建债务，债务份额为{getDescNode(inputs[0])}，分期期数为{getDescNode(inputs[1])}，每期每份债务偿付{getDescNode(inputs[2])}，每期每份债务违约金{getDescNode(inputs[3])}
+        创建债务，份额为{getDescNode(inputs[0])}，分期期数为{getDescNode(inputs[1])}，每期每份债务应偿还代币数量为{getDescNode(inputs[2])}，每期每份债务的违约金为{getDescNode(inputs[3])}
       </Typography.Text>
     },
   },
@@ -115,7 +115,7 @@ const config: ContractFunctionConfig[] = [
     stateMutability: StateMutability.Nonpayable,
     getDescription(inputs, outputs, accounts) {
       return <Typography.Text>
-        撤销哈希值{getDescNode(inputs[0])}{getDescNode(inputs[1])}额度的债务
+        撤销债务{getDescNode(inputs[0])}，{getDescNode(inputs[1])}份额的未确权债务
       </Typography.Text>
     },
   },
@@ -129,7 +129,7 @@ const config: ContractFunctionConfig[] = [
     stateMutability: StateMutability.Nonpayable,
     getDescription(inputs, outputs, accounts) {
       return <Typography.Text>
-        授权{getDescNode(getAccountName(accounts, inputs[0]))}，对于{getDescNode(inputs[1])}债务的交易额度为{getDescNode(inputs[2])}
+        授权{getDescNode(getAccountName(accounts, inputs[0]))}，对于{getDescNode(inputs[1])}债务的债权确认额度为{getDescNode(inputs[2])}
       </Typography.Text>
     },
   },
@@ -143,7 +143,7 @@ const config: ContractFunctionConfig[] = [
     stateMutability: StateMutability.Nonpayable,
     getDescription(inputs, outputs, accounts) {
       return <Typography.Text>
-        授权{getDescNode(getAccountName(accounts, inputs[0]))}，对于{getDescNode(inputs[1])}债务的交易额度为{getDescNode(inputs[2])}
+        授权{getDescNode(getAccountName(accounts, inputs[0]))}，对于{getDescNode(inputs[1])}债务的债权转移额度为{getDescNode(inputs[2])}
       </Typography.Text>
     },
   },
@@ -157,7 +157,7 @@ const config: ContractFunctionConfig[] = [
     stateMutability: StateMutability.Nonpayable,
     getDescription(inputs, outputs, accounts) {
       return <Typography.Text>
-        {getDescNode(getAccountName(accounts, inputs[0]))}确认债务{getDescNode(inputs[1])}的份额为{getDescNode(inputs[2])}
+        {getDescNode(getAccountName(accounts, inputs[0]))}对债务{getDescNode(inputs[1])}确认债权，份额为{getDescNode(inputs[2])}
       </Typography.Text>
     },
   },
@@ -171,7 +171,7 @@ const config: ContractFunctionConfig[] = [
     stateMutability: StateMutability.Nonpayable,
     getDescription(inputs, outputs, accounts) {
       return <Typography.Text>
-        {getDescNode(getAccountName(accounts, inputs[0]))}转移债权{getDescNode(inputs[1])}的份额为{getDescNode(inputs[2])}
+        {getDescNode(getAccountName(accounts, inputs[0]))}对债务{getDescNode(inputs[1])}获得债权，份额为{getDescNode(inputs[2])}
       </Typography.Text>
     },
   },
@@ -183,7 +183,7 @@ const config: ContractFunctionConfig[] = [
     stateMutability: StateMutability.Nonpayable,
     getDescription(inputs, outputs, accounts) {
       return <Typography.Text>
-        认证{getDescNode(getAccountName(accounts, inputs[0]))}为交易所
+        交易所{getDescNode(getAccountName(accounts, inputs[0]))}获得认证
       </Typography.Text>
     },
   },
@@ -195,7 +195,7 @@ const config: ContractFunctionConfig[] = [
     stateMutability: StateMutability.Nonpayable,
     getDescription(inputs, outputs, accounts) {
       return <Typography.Text>
-        取消交易所{getDescNode(getAccountName(accounts, inputs[0]))}的认证
+        交易所{getDescNode(getAccountName(accounts, inputs[0]))}失去认证
       </Typography.Text>
     },
   }

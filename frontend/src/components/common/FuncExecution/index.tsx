@@ -100,7 +100,7 @@ export default function Index({ name, inputs, stateMutability, getDescription, a
       return <StringInput
         key={index}
         placeholder={type}
-        value={(inputValues[index] ?? null) as string}
+        value={inputValues[index] as string}
         onChange={value => handleValueChange(index, value)}
       />
     }

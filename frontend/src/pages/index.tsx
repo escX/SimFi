@@ -73,11 +73,11 @@ export default function Index({ artifacts }: { artifacts: Artifact[] }) {
     }
   }
 
-  const handleDeploy = async (artifact: Artifact) => {
+  const handleDeploy = async (artifact: Artifact, params: any[]) => {
     if (!!currAccount && !!currAccount.address) {
       try {
         const factory: ethers.ContractFactory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, currAccount)
-        const contractRef = await factory.deploy()
+        const contractRef = await factory.deploy(...params)
         await contractRef.waitForDeployment()
         await contractRef.on("*", (event) => {
           setLogRecord(record => [...record, event.log])

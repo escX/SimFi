@@ -1,8 +1,9 @@
 import { Button, Card, Form, Select, Space, Typography, message } from "antd"
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Artifact } from "@/lib/const"
-import { AccountData } from "./const"
+import { AccountData, constructorParam } from "./const"
 import AccountListModal from "./AccountListModal"
+import StringInput from "@/components/common/FuncExecution/StringInput"
 
 interface Props {
   className: string
@@ -10,22 +11,58 @@ interface Props {
   artifacts: Artifact[]
   currAccountAddress: string | undefined
   onAccountChange: (address: string | undefined) => void
-  onDeploy: (artifact: Artifact) => Promise<void>
+  onDeploy: (artifact: Artifact, params: any[]) => Promise<void>
   onAccountNameChange: (names: Record<string, string>) => void
 }
 
 export default function Index({ className, accounts, artifacts, currAccountAddress, onAccountChange, onDeploy, onAccountNameChange }: Props) {
   const [currArtifact, setCurrArtifact] = useState<string>()
+  const [constructorParams, setConstructorParams] = useState<constructorParam[]>([])
   const [accountListVisible, setAccountListVisible] = useState<boolean>(false)
   const [deployLoading, setDeployLoading] = useState<boolean>(false)
   const [messageApi, contextHolder] = message.useMessage()
 
+  const currContract = useMemo(() => {
+    return artifacts.find(item => item.sourceName === currArtifact)
+  }, [currArtifact, artifacts])
+
+  useEffect(() => {
+    if (currContract && currContract.abi[0]?.type === 'constructor') {
+      setConstructorParams((currContract.abi[0]?.inputs ?? []).map((item: any) => ({
+        ...item,
+        value: undefined
+      })))
+    } else {
+      setConstructorParams([])
+    }
+  }, [currContract])
+
+  const handleChangeParamValue = (value: any, index: number) => {
+    setConstructorParams(params => {
+      params[index].value = value
+      return params
+    })
+  }
+
+  const getParamNode = (type: string, name: string, value: any, index: number) => {
+    if (type === 'address') {
+      return <StringInput
+        key={index}
+        placeholder={name}
+        width="100%"
+        value={value}
+        onChange={value => handleChangeParamValue(value, index)}
+      />
+    }
+
+    return null
+  }
+
   const handleDeploy = () => {
     if (!!currArtifact) {
-      const artifact = artifacts.find(item => item.sourceName === currArtifact)
-      if (artifact) {
+      if (currContract) {
         setDeployLoading(true)
-        onDeploy(artifact).then(() => {
+        onDeploy(currContract, constructorParams.map(param => param.value)).then(() => {
           setCurrArtifact(undefined)
         }).finally(() => {
           setDeployLoading(false)
@@ -58,7 +95,7 @@ export default function Index({ className, accounts, artifacts, currAccountAddre
           />
         </Form.Item>
 
-        <Form.Item style={{ marginBottom: 0 }}>
+        <Form.Item style={{ marginBottom: constructorParams.length === 0 ? 0 : 24 }}>
           <Space.Compact style={{ width: '100%' }}>
             <Select
               options={artifacts.map(artifact => ({
@@ -69,9 +106,18 @@ export default function Index({ className, accounts, artifacts, currAccountAddre
               value={currArtifact}
               onChange={setCurrArtifact}
             />
-            <Button type="primary" onClick={handleDeploy} loading={deployLoading}>部署合约</Button>
+            {constructorParams.length === 0 && <Button type="primary" onClick={handleDeploy} loading={deployLoading}>部署合约</Button>}
           </Space.Compact>
         </Form.Item>
+
+        {constructorParams.length > 0 && (
+          <Form.Item style={{ marginBottom: 0 }}>
+            <Space.Compact style={{ width: '100%' }}>
+              {constructorParams.map((param, index) => getParamNode(param.type, param.name, param.value, index))}
+              <Button type="primary" onClick={handleDeploy} loading={deployLoading}>部署合约</Button>
+            </Space.Compact>
+          </Form.Item>
+        )}
       </Card>
 
       <AccountListModal
