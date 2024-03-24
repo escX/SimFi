@@ -1,4 +1,3 @@
-require("@chainlink/hardhat-chainlink"); // 该依赖放在最前面，否则可能会影响测试运行
 require("@nomicfoundation/hardhat-ethers");
 require("@nomicfoundation/hardhat-toolbox");
 require("@nomicfoundation/hardhat-chai-matchers");
