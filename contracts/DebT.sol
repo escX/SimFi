@@ -41,13 +41,13 @@ contract DebT is IDebT, IDebTErrors {
         _;
     }
 
-    IERC20 private immutable _STF;
+    IERC20 private immutable _SFT;
     string public constant name = "Debt Token";
     string public constant symbol = "DebT";
     address private immutable _owner;
 
     constructor(address _sftAddress) {
-        _STF = IERC20(_sftAddress);
+        _SFT = IERC20(_sftAddress);
         _owner = msg.sender;
     }
 
@@ -155,7 +155,7 @@ contract DebT is IDebT, IDebTErrors {
         // 债务没有确权份额，且撤销份额等于债务总份额时，删除债务信息
         // 否则扣除未确权份额
         if (_debtProducer.amount == _amount) {
-            _deleteProducerDebt(_producerHash, msg.sender);
+            _deleteProducerDebt(_producerHash);
         } else {
             _splitProducerDebt(_producerHash, _amount);
         }
@@ -182,10 +182,6 @@ contract DebT is IDebT, IDebTErrors {
 
         emit Approve(msg.sender, _exchange, _consumerHash, _amount);
     }
-
-    function settleDebt() external onlyExchange(msg.sender) {}
-
-    function transferToken() external onlyExchange(msg.sender) {}
 
     function setUnconfirmedAmount(
         bytes32 _producerHash,
@@ -306,7 +302,7 @@ contract DebT is IDebT, IDebTErrors {
         // 若债权全部转移，移除原债权人持有的份额
         // 否则，原债权人持有份额减少
         if (_debtConsumer.amount == _amount) {
-            _deleteConsumerDebt(_consumerHash, _debtConsumer.creditor);
+            _deleteConsumerDebt(_consumerHash);
         } else {
             _splitConsumerDebt(
                 _consumerHash,
@@ -419,11 +415,11 @@ contract DebT is IDebT, IDebTErrors {
         _debtorHash[_debtor].push(_producerHash);
     }
 
-    // 移除未确权债务
-    function _deleteProducerDebt(
-        bytes32 _producerHash,
-        address _debtor
-    ) private {
+    // 移除债务
+    function _deleteProducerDebt(bytes32 _producerHash) private {
+        DebtProducer memory _debtProducer = _debtProduced[_producerHash];
+        address _debtor = _debtProducer.debtor;
+
         delete _debtProduced[_producerHash];
         _debtorHash[_debtor].remove(_producerHash);
     }
@@ -461,10 +457,10 @@ contract DebT is IDebT, IDebTErrors {
     }
 
     // 移除原债权人持有的债务
-    function _deleteConsumerDebt(
-        bytes32 _consumerHash,
-        address _creditor
-    ) private {
+    function _deleteConsumerDebt(bytes32 _consumerHash) private {
+        DebtConsumer memory _debtConsumer = _debtConsumed[_consumerHash];
+        address _creditor = _debtConsumer.creditor;
+
         delete _debtConsumed[_consumerHash];
         _creditorHash[_creditor].remove(_consumerHash);
     }
@@ -491,5 +487,66 @@ contract DebT is IDebT, IDebTErrors {
         creditorAllowance[creditor][exchange][hash] =
             creditorAllowance[creditor][exchange][hash] -
             amount;
+    }
+
+    // 系统在还款时间从债务人账户转账代币给债权人
+    function _repay(bytes32 _consumerHash) private {
+        DebtConsumer memory _debtConsumer = _debtConsumed[_consumerHash];
+        DebtConsumer storage s_debtConsumer = _debtConsumed[_consumerHash];
+        DebtProducer memory _debtProducer = _debtProduced[
+            _debtConsumer.producerHash
+        ];
+        address _debtor = _debtProducer.debtor;
+        address _creditor = _debtConsumer.creditor;
+
+        // 债务人账户余额
+        uint256 _balanceOfDebtor = _SFT.balanceOf(_debtor);
+
+        // 债务人应偿还的代币数量，由三部分组成
+        // 1、每期应还部分：持有份额 * 每期每份应还代币数量
+        // 2、上期未还清部分
+        // 3、违约金：持有份额 * 每期每份违约金 * 违约次数
+        uint256 _totalPenalty = _debtConsumer.amount *
+            _debtProducer.instalPenalty *
+            _debtConsumer.breachTimes;
+        uint256 _shouldRepay = _debtConsumer.amount *
+            _debtProducer.instalPayment +
+            _debtConsumer.lastUnpaid +
+            _totalPenalty;
+
+        if (_balanceOfDebtor < _shouldRepay) {
+            // 债务人账户余额不足，全部偿还
+            _SFT.transferFrom(_debtor, _creditor, _balanceOfDebtor);
+
+            s_debtConsumer.currentPeriod = _debtConsumer.currentPeriod + 1;
+            s_debtConsumer.breachTimes = _debtConsumer.breachTimes + 1;
+            s_debtConsumer.lastUnpaid =
+                _shouldRepay -
+                _balanceOfDebtor -
+                _totalPenalty;
+        } else {
+            // 债务人账户余额充足，偿还应偿还的代币数量
+            _SFT.transferFrom(_debtor, _creditor, _shouldRepay);
+
+            if (_debtConsumer.currentPeriod == _debtProducer.instalPeriods) {
+                // 债务已全部偿还，进行结算
+                _settleDebt(_consumerHash);
+            } else {
+                s_debtConsumer.currentPeriod = _debtConsumer.currentPeriod + 1;
+                s_debtConsumer.lastUnpaid = 0;
+            }
+        }
+    }
+
+    // 债务已全部偿还，进行结算
+    function _settleDebt(bytes32 _consumerHash) private {
+        DebtConsumer memory _debtConsumer = _debtConsumed[_consumerHash];
+        bytes32 _producerHash = _debtConsumer.producerHash;
+        DebtProducer memory _debtProducer = _debtProduced[_producerHash];
+
+        _deleteConsumerDebt(_consumerHash);
+        _debtProduced[_producerHash].amount =
+            _debtProducer.amount -
+            _debtConsumer.amount;
     }
 }

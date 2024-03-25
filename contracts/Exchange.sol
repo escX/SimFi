@@ -16,12 +16,12 @@ contract Exchange is IExchange, IExchangeErrors {
         _;
     }
 
-    IERC20 private immutable _STF;
+    IERC20 private immutable _SFT;
     IDebT private immutable _DebT;
     address private immutable _owner;
 
     constructor(address _sftAddress, address _debtAddress) {
-        _STF = IERC20(_sftAddress);
+        _SFT = IERC20(_sftAddress);
         _DebT = IDebT(_debtAddress);
         _owner = msg.sender;
     }
@@ -183,14 +183,14 @@ contract Exchange is IExchange, IExchangeErrors {
         Product memory _p = _product[_productHash];
 
         if (_p.debtStatus == DebtStatus.OnSale) {
-            uint256 _allowance = _STF.allowance(msg.sender, address(this));
+            uint256 _allowance = _SFT.allowance(msg.sender, address(this));
 
             if (_allowance < _p.amount) {
                 revert InsufficientAllowedShares(_allowance, _p.amount);
             }
 
             // 代币转账
-            _STF.transferFrom(msg.sender, _p.seller, _p.amount * _p.unitPrice);
+            _SFT.transferFrom(msg.sender, _p.seller, _p.amount * _p.unitPrice);
 
             // 债权确认或转移
             if (_p.debtType == DebtType.Unconfirmed) {
