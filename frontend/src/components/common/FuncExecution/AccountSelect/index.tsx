@@ -14,8 +14,10 @@ export default function Index({ placeholder, accounts, width = 120, value, onCha
     placeholder={placeholder}
     options={accounts}
     fieldNames={{ label: 'name', value: 'address' }}
-    value={value}
-    onChange={onChange}
-    style={{ width }}
+    mode="tags"
+    maxCount={1}
+    value={value ? [value] : undefined}
+    onChange={value => { onChange(value[0]) }}
+    style={{ width, height: 32 }}
   />
 }

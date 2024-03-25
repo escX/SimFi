@@ -184,13 +184,14 @@ contract Exchange is IExchange, IExchangeErrors {
 
         if (_p.debtStatus == DebtStatus.OnSale) {
             uint256 _allowance = _SFT.allowance(msg.sender, address(this));
+            uint256 _needPay = _p.amount * _p.unitPrice;
 
-            if (_allowance < _p.amount) {
-                revert InsufficientAllowedShares(_allowance, _p.amount);
+            if (_allowance < _needPay) {
+                revert InsufficientAllowedShares(_allowance, _needPay);
             }
 
             // 代币转账
-            _SFT.transferFrom(msg.sender, _p.seller, _p.amount * _p.unitPrice);
+            _SFT.transferFrom(msg.sender, _p.seller, _needPay);
 
             // 债权确认或转移
             if (_p.debtType == DebtType.Unconfirmed) {
