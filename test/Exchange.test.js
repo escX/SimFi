@@ -11,12 +11,10 @@ const creditor2ApproveSFT = 50000;
 
 const debtorCreatedDebt = 10000;
 const debtorApproveDebt = 10000;
-const creditor1ConfirmDebt = 10000;
-const creditor1ApproveDebt = 10000;
-const creditor2TransferAmount = 10000;
+const creditor1ApproveDebt = 100;
 
-const unconfirmedProduct = 100;
-const confirmedProduct = 100;
+const debtorPublishAmount = 100;
+const creditor1PublishAmount = 100;
 
 async function deployFixture() {
   const [SFTDeployer, DebTDeployer, ExchangeDeployer, debtor, creditor1, creditor2] = await ethers.getSigners();
@@ -71,70 +69,68 @@ async function DebTPreFixture() {
 }
 
 describe("Exchange Contract", function () {
-  it("all", async function () {
+  it("Test the entire process", async function () {
     const { SFTContract, DebTContract, ExchangeContract, SFTAddress, DebTAddress, ExchangeAddress, SFTDeployer, DebTDeployer, ExchangeDeployer, debtor, creditor1, creditor2, unconfirmedDebtHash } = await loadFixture(DebTPreFixture);
 
     // debtor发布未确权债务
-    const listenPublish = async function (resolve) {
+    const listenUnconfirmedPublish = async function (resolve) {
       await ExchangeContract.once("Publish", function (...data) {
         resolve(data[0])
       })
     }
     const publishUnconfirmedEvent = async function () {
-      await ExchangeContract.connect(debtor).publishUnconfirmed(unconfirmedDebtHash, unconfirmedProduct, 100);
+      await ExchangeContract.connect(debtor).publishUnconfirmed(unconfirmedDebtHash, debtorPublishAmount, 100);
     }
-    const [unconfirmedProductHash] = await watchAction([listenPublish], publishUnconfirmedEvent);
+    const [unconfirmedProductHash] = await watchAction([listenUnconfirmedPublish], publishUnconfirmedEvent);
+
     // creditor1购买
-    await ExchangeContract.connect(creditor1).buy(unconfirmedProductHash);
-    // // creditor1发布确权债务
-    // const [confirmedProductHash] = await watchAction([async function (resolve) {
-    //   await ExchangeContract.once("Publish", function (...data) {
-    //     resolve(data[0])
-    //   })
-    // }], async function () {
-    //   await ExchangeContract.connect(creditor1).publishConfirmed(confirmedDebtHash, confirmedProduct, 100);
-    // });
-    // // creditor2购买
-    // await ExchangeContract.connect(creditor2).buy(confirmedProductHash);
+    const listenConsume1 = async function(resolve) {
+      await DebTContract.once("Consume", function (...data) {
+        resolve(data[2]);
+      });
+    };
+    const buyUnconfirmedEvent = async function() {
+      await ExchangeContract.connect(creditor1).buy(unconfirmedProductHash);
+    }
+    const [confirmedDebtHash1] = await watchAction([listenConsume1], buyUnconfirmedEvent);
+
+    // creditor1为交易所转移债权进行授权
+    await DebTContract.connect(creditor1).creditorApprove(ExchangeAddress, confirmedDebtHash1, creditor1ApproveDebt);
+
+    // creditor1发布确权债务
+    const listenConfirmedPublish = async function (resolve) {
+      await ExchangeContract.once("Publish", function (...data) {
+        resolve(data[0])
+      })
+    }
+    const publishConfirmedEvent = async function () {
+      await ExchangeContract.connect(creditor1).publishConfirmed(confirmedDebtHash1, creditor1PublishAmount, 100);
+    }
+    const [confirmedProductHash] = await watchAction([listenConfirmedPublish], publishConfirmedEvent);
+
+    // creditor2购买
+    const listenConsume2 = async function(resolve) {
+      await DebTContract.once("Consume", function (...data) {
+        resolve(data[2]);
+      });
+    };
+    const buyConfirmedEvent = async function() {
+      await ExchangeContract.connect(creditor2).buy(confirmedProductHash);
+    }
+    const [confirmedDebtHash2] = await watchAction([listenConsume2], buyConfirmedEvent);
   })
 
-  describe("product", function () {
-    it("", async function () {
+  describe("product", function () {});
 
-    });
-  });
+  describe("publishUnconfirmed", function () {});
 
-  describe("publishUnconfirmed", function () {
+  describe("publishConfirmed", function () {});
 
-  });
+  describe("revokeProduct", function () {});
 
-  describe("publishConfirmed", function () {
-    it("", async function () {
+  describe("updateProductAmount", function () {});
 
-    });
-  });
+  describe("updateProductUnitPrice", function () {});
 
-  describe("revokeProduct", function () {
-    it("", async function () {
-
-    });
-  });
-
-  describe("updateProductAmount", function () {
-    it("", async function () {
-
-    });
-  });
-
-  describe("updateProductUnitPrice", function () {
-    it("", async function () {
-
-    });
-  });
-
-  describe("buy", function () {
-    it("", async function () {
-
-    });
-  });
+  describe("buy", function () {});
 });
