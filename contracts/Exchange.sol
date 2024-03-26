@@ -7,7 +7,7 @@ import {IExchange} from "./interfaces/IExchange.sol";
 import {IExchangeErrors} from "./interfaces/IExchangeErrors.sol";
 
 contract Exchange is IExchange, IExchangeErrors {
-    modifier onlySeller(bytes32 _productHash) {
+    modifier onlySellerHash(bytes32 _productHash) {
         address seller = _product[_productHash].seller;
 
         if (msg.sender != seller) {
@@ -79,7 +79,7 @@ contract Exchange is IExchange, IExchangeErrors {
         // 扣除未确认份额，防止被债务人撤销
         _DebT.setUnconfirmedAmount(_debtHash, _unconfirmedAmount - _amount);
 
-        emit Publish(_productHash);
+        emit Publish(_productHash, msg.sender, _debtHash, _amount, _unitPrice);
     }
 
     function publishConfirmed(
@@ -125,12 +125,12 @@ contract Exchange is IExchange, IExchangeErrors {
             soldTimestamp: uint256(0)
         });
 
-        emit Publish(_productHash);
+        emit Publish(_productHash, msg.sender, _debtHash, _amount, _unitPrice);
     }
 
     function revokeProduct(
         bytes32 _productHash
-    ) external onlySeller(_productHash) {
+    ) external onlySellerHash(_productHash) {
         Product memory _p = _product[_productHash];
 
         if (
@@ -149,33 +149,35 @@ contract Exchange is IExchange, IExchangeErrors {
                 _unconfirmedAmount + _p.amount
             );
 
-            emit Revoke();
+            emit Revoke(_productHash);
         }
     }
 
     function updateProductAmount(
         bytes32 _productHash,
         uint256 _amount
-    ) external onlySeller(_productHash) {
+    ) external onlySellerHash(_productHash) {
         Product memory _p = _product[_productHash];
 
         if (_p.debtStatus == DebtStatus.OnSale) {
+            uint256 _oldAmount = _p.amount;
             _product[_productHash].amount = _amount;
 
-            emit Update();
+            emit UpdateAmount(_productHash, _amount, _oldAmount);
         }
     }
 
     function updateProductUnitPrice(
         bytes32 _productHash,
         uint256 _unitPrice
-    ) external onlySeller(_productHash) {
+    ) external onlySellerHash(_productHash) {
         Product memory _p = _product[_productHash];
 
         if (_p.debtStatus == DebtStatus.OnSale) {
+            uint256 _oldUnitPrice = _p.unitPrice;
             _product[_productHash].unitPrice = _unitPrice;
 
-            emit Update();
+            emit UpdatePrice(_productHash, _unitPrice, _oldUnitPrice);
         }
     }
 
@@ -207,7 +209,7 @@ contract Exchange is IExchange, IExchangeErrors {
             _product[_productHash].debtStatus = DebtStatus.Sold;
             _product[_productHash].soldTimestamp = block.timestamp;
 
-            emit Buy();
+            emit Buy(_productHash, _p.seller, msg.sender);
         }
     }
 }

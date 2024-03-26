@@ -26,10 +26,29 @@ interface IExchange {
         uint256 soldTimestamp; // 卖出时间
     }
 
-    event Publish(bytes32 productHash);
-    event Revoke();
-    event Update();
-    event Buy();
+    event Publish(
+        bytes32 indexed productHash,
+        address indexed seller,
+        bytes32 indexed debtHash,
+        uint256 amount,
+        uint256 unitPrice
+    );
+    event Revoke(bytes32 indexed productHash);
+    event UpdateAmount(
+        bytes32 indexed productHash,
+        uint256 newValue,
+        uint256 oldValue
+    );
+    event UpdatePrice(
+        bytes32 indexed productHash,
+        uint256 newValue,
+        uint256 oldValue
+    );
+    event Buy(
+        bytes32 indexed productHash,
+        address indexed seller,
+        address indexed buyer
+    );
 
     function product(bytes32 _hash) external view returns (Product memory);
 
